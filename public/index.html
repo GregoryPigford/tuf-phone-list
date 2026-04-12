@@ -482,7 +482,7 @@ function renderList(){
   document.getElementById("listBody").innerHTML=unique.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td>${formatPhone(m.phone)}</td><td>${fmtDate(m.sobriety_date)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
 }
 
-function sponsorStr(m){return[m.sponsor_dropdown,m.sponsor_other].filter(Boolean).join(", ")||"—";}
+function sponsorStr(m){const d=m.sponsor_dropdown||"";if(d==="Other"||d==="other")return m.sponsor_other||"—";return[d,m.sponsor_other].filter(v=>v&&v.trim()).join(", ")||"—";}
 function fmtDate(d){if(!d)return"—";const[y,mo,day]=d.split("-");return`${parseInt(mo)}/${parseInt(day)}/${y.slice(2)}`;}
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 
@@ -536,11 +536,8 @@ function switchSponsorTab(tab) {
 }
 
 function isSponsorCandidate(m) {
-  const d = (m.sponsor_dropdown || "").toLowerCase();
-  const o = (m.sponsor_other || "").toLowerCase();
-  // Include: Ask me, Other (with text), Yes, Temporarily, Sober support
-  // Exclude: No, Not yet, empty
-  return d === "ask me" || d === "yes" || d === "temporarily";
+  const d = (m.sponsor_dropdown || "").toLowerCase().trim();
+  return d === "yes" || d === "ask me" || d === "temporarily";
 }
 
 function renderSponsorList() {
