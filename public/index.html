@@ -253,7 +253,7 @@
   <div class="hero">
     <div class="hero-inner">
       <div class="hero-left">
-        <div class="hero-tag"><span class="hero-tag-dot"></span>Est. 2020 · AA Meeting Community</div>
+        <div class="hero-tag"><span class="hero-tag-dot"></span>Est. 2021 · AA Meeting Community</div>
         <h1 class="hero-title">The Unshakable Foundation</h1>
         <p class="hero-sub">Reach out. Stay connected. Keep the foundation strong.</p>
       </div>
@@ -311,7 +311,7 @@
 
   <div class="home-footer">
     <div class="home-footer-inner">
-      <span class="home-footer-text">The Unshakable Foundation · Est. 2020</span>
+      <span class="home-footer-text">The Unshakable Foundation · Est. 2021</span>
       <span class="home-footer-month" id="monthNote"></span>
     </div>
   </div>
@@ -449,7 +449,7 @@
     <img class="header-logo" id="listLogo" alt="TUF" onclick="goTo('home')" />
     <div class="header-text"><h2 id="listHeading">Phone List</h2><p id="listSub">Loading...</p></div>
     <div style="display:flex;gap:8px;flex-shrink:0">
-      <button class="back-btn" onclick="goTo('gender-gate')" title="Switch list">⇄ Switch</button>
+      <button class="back-btn" onclick="showGenderGate()" title="Switch list">⇄ Switch</button>
       <button class="back-btn" onclick="goTo('home')">← Home</button>
     </div>
   </div>
@@ -472,10 +472,7 @@
       <div class="stat"><div class="stat-label">Members</div><div class="stat-value" id="statCount">—</div></div>
       <div class="stat"><div class="stat-label">Combined Sober Time</div><div class="stat-value" id="statSober">—</div></div>
     </div>
-    <div class="gender-tabs">
-      <button class="gtab active" id="gtab-male" onclick="switchTab('male')">Men's List</button>
-      <button class="gtab" id="gtab-female" onclick="switchTab('female')">Women's List</button>
-    </div>
+    <div id="listTabRow" class="gender-tabs"></div>
     <div class="list-header-row">
       <p class="list-meta" id="listMeta"></p>
       <button class="print-btn" onclick="window.print()">⎙ Print</button>
@@ -494,10 +491,7 @@
     <button class="back-btn" onclick="goTo('home')">← Home</button>
   </div>
   <div class="inner">
-    <div class="gender-tabs">
-      <button class="gtab active" id="sgtab-male" onclick="switchSponsorTab('male')">Men's List</button>
-      <button class="gtab" id="sgtab-female" onclick="switchSponsorTab('female')">Women's List</button>
-    </div>
+<div id="sponsorTabRow" class="gender-tabs"></div>
     <p style="font-size:.82rem;color:var(--text-m);margin-bottom:1rem;font-style:italic" id="sponsorMeta"></p>
     <div class="member-cards" id="sponsorCards"></div>
     <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Willing to Sponsor</th></tr></thead><tbody id="sponsorBody"></tbody></table></div>
@@ -518,6 +512,14 @@ const TRANS=[
 function rAF(fn){requestAnimationFrame(fn);}
 function hideWipe(w){w.style.transition="opacity .25s ease";w.style.opacity="0";setTimeout(()=>{w.style.pointerEvents="none";w.style.clipPath="none";w.style.transform="none";},260);}
 function goTo(id){const w=document.getElementById("wipe");TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);hideWipe(w);});}
+function buildListTab() {
+  const saved = localStorage.getItem("tuf_gender") || currentTab;
+  const label = saved === "male" ? "Men's List" : "Women's List";
+  const row = document.getElementById("listTabRow");
+  if (row) row.innerHTML = `<button class="gtab active">${label}</button>`;
+  currentTab = saved;
+}
+
 function goToList(){
   const saved = localStorage.getItem("tuf_gender");
   if(saved === "male" || saved === "female"){
@@ -535,7 +537,16 @@ function chooseGender(gender){
   goTo("list-page");
   loadMembers();
 }
-function goToSponsor(){goTo("sponsor-page"); if(allMembers.length) renderSponsorList(); else loadSponsorFromAPI();}
+function goToSponsor(){
+  const saved = localStorage.getItem("tuf_gender");
+  if(saved === "male" || saved === "female"){
+    currentSponsorTab = saved;
+    goTo("sponsor-page");
+    if(allMembers.length) renderSponsorList(); else loadSponsorFromAPI();
+  } else {
+    goTo("gender-gate");
+  }
+}
 
 function formatPhone(raw){if(!raw)return"—";const t=raw.trim();if(t.startsWith("+")||t.toLowerCase().includes("whatsapp"))return t;const d=t.replace(/\D/g,"");if(d.length===10)return`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;if(d.length===11&&d[0]==="1")return`(${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;return t;}
 function autoFormat(el){el.addEventListener("input",function(){const d=this.value.replace(/\D/g,"");if(d.length<=3)this.value=d.length?`(${d}`:"";else if(d.length<=6)this.value=`(${d.slice(0,3)}) ${d.slice(3)}`;else if(d.length<=10)this.value=`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;else this.value=`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6,10)}`;});}
@@ -543,7 +554,7 @@ autoFormat(document.getElementById("fphone"));
 autoFormat(document.getElementById("editPhone"));
 
 let allMembers=[],currentTab="male";
-async function loadMembers(){loadAnnouncement();try{const r=await fetch("/api/members");allMembers=await r.json();renderSoberversaries();renderStats();renderList();}catch(e){document.getElementById("memberCards").innerHTML='<p style="text-align:center;padding:2rem;color:var(--text-m)">Unable to load. Please try again.</p>';}}
+async function loadMembers(){buildListTab();loadAnnouncement();try{const r=await fetch("/api/members");allMembers=await r.json();renderSoberversaries();renderStats();renderList();}catch(e){document.getElementById("memberCards").innerHTML='<p style="text-align:center;padding:2rem;color:var(--text-m)">Unable to load. Please try again.</p>';}}
 
 function renderSoberversaries(){
   const today=new Date(),thisMonth=today.getMonth();
@@ -647,6 +658,14 @@ async function loadAnnouncement(){
 // ── FIND A SPONSOR ──
 let currentSponsorTab = "male";
 
+function buildSponsorTabs() {
+  const saved = localStorage.getItem("tuf_gender") || currentSponsorTab;
+  const label = saved === "male" ? "Men's List" : "Women's List";
+  document.getElementById("sponsorTabRow").innerHTML =
+    `<button class="gtab active" id="sgtab-${saved}">${label}</button>`;
+  currentSponsorTab = saved;
+}
+
 function switchSponsorTab(tab) {
   currentSponsorTab = tab;
   document.querySelectorAll(".gtab").forEach(b => {
@@ -662,6 +681,7 @@ function isSponsorCandidate(m) {
 }
 
 function renderSponsorList() {
+  buildSponsorTabs();
   if (!allMembers.length) { loadSponsorFromAPI(); return; }
   const seen = new Set();
   const candidates = allMembers
@@ -702,6 +722,7 @@ function renderSponsorList() {
 }
 
 async function loadSponsorFromAPI() {
+  buildSponsorTabs();
   try {
     const res = await fetch("/api/members");
     allMembers = await res.json();
