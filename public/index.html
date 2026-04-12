@@ -310,9 +310,6 @@
 
   </div>
 </div>
-<div style="text-align:center;padding:.5rem 0 1.5rem;opacity:0;animation:fadeUp .6s ease 2.1s forwards">
-  <button onclick="resetGenderChoice()" style="background:none;border:none;font-size:.65rem;color:var(--text-m);cursor:pointer;opacity:.4;padding:4px;font-family:inherit;letter-spacing:.02em">reset list preference</button>
-</div>
 
 <!-- THANK YOU -->
 <div id="thankyou" class="page">
@@ -397,6 +394,11 @@
       <button class="submit-btn" id="saveBtn" onclick="saveUpdate()">Save Changes</button>
       <div class="msg" id="emsg"></div>
     </div>
+    <div style="text-align:center;padding:1.5rem 0 0">
+    <button onclick="resetGenderChoice()" style="background:none;border:none;font-size:.72rem;color:var(--text-m);cursor:pointer;padding:6px 10px;font-family:inherit;text-decoration:underline;opacity:.6">
+      ↺ Reset my list preference (Men's / Women's)
+    </button>
+    <p style="font-size:.68rem;color:var(--text-m);margin-top:4px;opacity:.5">Use this if you selected the wrong list when you first visited.</p>
   </div>
 </div>
 
@@ -487,6 +489,15 @@ function preCheckGender(){
   if(radio){
     radio.checked=true;
     radio.closest(".gender-opt").classList.add("selected");
+    // Add a small note that this was pre-filled
+    const existing=document.getElementById("genderPrefillNote");
+    if(!existing){
+      const note=document.createElement("p");
+      note.id="genderPrefillNote";
+      note.style.cssText="font-size:.72rem;color:var(--text-m);margin-top:.4rem;font-style:italic";
+      note.textContent="Pre-filled based on your list preference. Change if needed.";
+      radio.closest(".gender-group").after(note);
+    }
   }
 }
 function buildListTab() {
