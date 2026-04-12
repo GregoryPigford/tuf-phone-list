@@ -399,6 +399,16 @@
 
   <!-- SPONSORS -->
   <div class="screen" id="sponsor-screen">
+    <div id="sponsorGate" style="display:none">
+      <div class="inline-gate">
+        <h2 class="ig-title">Which list would you like to view?</h2>
+        <p class="ig-sub">Your choice will be remembered on this device.</p>
+        <button class="gate-btn gate-btn-men" onclick="chooseSponsorGender('male')">Men's List</button>
+        <button class="gate-btn gate-btn-women" onclick="chooseSponsorGender('female')">Women's List</button>
+        <p class="gate-note-sm">* We recognize that gender exists beyond these two categories. We list Men's and Women's to match our meeting's existing structure — all are welcome.</p>
+      </div>
+    </div>
+    <div id="sponsorContent" style="display:none">
     <div class="inner">
       <div class="g-tabs" style="padding:0 0 1rem"><div id="sponsorTabRow" style="display:flex;gap:8px;width:100%"></div></div>
       <p style="font-size:.8rem;color:var(--text-m);margin-bottom:1rem;font-style:italic" id="sponsorMeta"></p>
@@ -436,8 +446,18 @@
         <div class="rcard-bg"></div>
         <div class="rcard-icon">📍</div>
         <div class="rcard-text">
-          <div class="rcard-title">Meeting Verification</div>
-          <div class="rcard-desc">Verify &amp; find AA meetings near you</div>
+          <div class="rcard-title">Find AA Meetings</div>
+          <div class="rcard-desc">Find AA meetings near you</div>
+        </div>
+        <div class="rcard-arrow">→</div>
+      </a>
+
+      <a class="rcard" href="#" style="--rc:#2a2a4a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Crect x='0' y='0' width='20' height='20'/%3E%3Crect x='20' y='20' width='20' height='20'/%3E%3C/g%3E%3C/svg%3E&quot;)" onclick="event.preventDefault();alert('Meeting verification link coming soon.')">
+        <div class="rcard-bg"></div>
+        <div class="rcard-icon">✅</div>
+        <div class="rcard-text">
+          <div class="rcard-title">TUF Meeting Verification</div>
+          <div class="rcard-desc">Get proof of attendance at a TUF meeting — link coming soon</div>
         </div>
         <div class="rcard-arrow">→</div>
       </a>
@@ -865,7 +885,24 @@ function renderList(){
 // ── SPONSORS ──
 function initSponsor(){
   const saved=localStorage.getItem("tuf_gender");
-  if(saved==="male"||saved==="female") currentSponsorTab=saved;
+  if(saved==="male"||saved==="female"){
+    currentSponsorTab=saved;
+    document.getElementById("sponsorGate").style.display="none";
+    document.getElementById("sponsorContent").style.display="block";
+    buildSponsorTab();
+    if(allMembers.length) renderSponsorList(); else loadSponsorData();
+  } else {
+    document.getElementById("sponsorGate").style.display="block";
+    document.getElementById("sponsorContent").style.display="none";
+  }
+}
+
+function chooseSponsorGender(gender){
+  localStorage.setItem("tuf_gender",gender);
+  currentSponsorTab=gender;
+  currentListTab=gender;
+  document.getElementById("sponsorGate").style.display="none";
+  document.getElementById("sponsorContent").style.display="block";
   buildSponsorTab();
   if(allMembers.length) renderSponsorList(); else loadSponsorData();
 }
