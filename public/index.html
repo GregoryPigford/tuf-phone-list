@@ -514,8 +514,8 @@ function preCheckGender(){
   }
 }
 function buildListTab() {
-  const saved = localStorage.getItem("tuf_gender") || currentTab;
-  currentTab = (saved === "male" || saved === "female") ? saved : "male";
+  const saved = localStorage.getItem("tuf_gender");
+  if(saved === "male" || saved === "female") currentTab = saved;
   const label = currentTab === "male" ? "Men's List" : "Women's List";
   const row = document.getElementById("listTabRow");
   if (row) row.innerHTML = `<button class="gtab active" style="flex:1">${label}</button>`;
@@ -525,6 +525,7 @@ function goToList(){
   const saved = localStorage.getItem("tuf_gender");
   if(saved === "male" || saved === "female"){
     currentTab = saved;
+    currentSponsorTab = saved;
     goTo("list-page");
     setTimeout(()=>{ buildListTab(); loadMembers(); }, 50);
   } else {
@@ -534,22 +535,15 @@ function goToList(){
 
 function resetGenderChoice(){
   localStorage.removeItem("tuf_gender");
-  // Reload gate with fresh animations
-  const gate = document.getElementById("gender-gate");
-  const inner = gate.querySelector(".gate-inner");
-  const clone = inner.cloneNode(true);
-  // Re-attach button events after clone
-  inner.parentNode.replaceChild(clone, inner);
-  // Re-bind reset button
-  clone.querySelector("button[onclick]").onclick = resetGenderChoice;
   goTo("gender-gate");
 }
 
 function chooseGender(gender){
   localStorage.setItem("tuf_gender", gender);
   currentTab = gender;
+  currentSponsorTab = gender;
   goTo("list-page");
-  loadMembers();
+  setTimeout(()=>{ buildListTab(); loadMembers(); }, 50);
 }
 function goToSponsor(){
   const saved = localStorage.getItem("tuf_gender");
