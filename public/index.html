@@ -28,23 +28,16 @@
 
     #wipe{position:fixed;inset:0;z-index:9999;pointer-events:none;background:var(--navy);opacity:0}
 
-    /* ── SIDEBAR NAV ── */
+    /* ── NAV: SIDEBAR (desktop) + BOTTOM TABS (mobile) ── */
     #app{display:flex;height:100vh;overflow:hidden}
 
-    /* sidebar */
-    #sidebar{
-      width:220px;flex-shrink:0;
-      background:linear-gradient(180deg,var(--navy) 0%,var(--navy2) 100%);
-      display:flex;flex-direction:column;
-      border-right:1px solid rgba(255,255,255,.07);
-      z-index:200;
-      transition:transform .28s cubic-bezier(.4,0,.2,1);
-    }
+    /* ── SIDEBAR (desktop only) ── */
+    #sidebar{width:220px;flex-shrink:0;background:linear-gradient(180deg,var(--navy) 0%,var(--navy2) 100%);display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.07);z-index:10}
     .sidebar-logo{padding:1.4rem 1.25rem 1rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid rgba(255,255,255,.08)}
     .sidebar-logo img{width:36px;height:auto}
     .sidebar-logo-text{font-family:"Fraunces",serif;font-size:.85rem;font-weight:700;color:rgba(255,255,255,.85);line-height:1.3}
     .sidebar-nav{flex:1;padding:.75rem 0;overflow-y:auto}
-    .nav-item{display:flex;align-items:center;gap:.75rem;padding:.72rem 1.25rem;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:"DM Sans",sans-serif;font-size:.88rem;font-weight:500;color:rgba(255,255,255,.55);transition:background .18s,color .18s;border-radius:0;position:relative}
+    .nav-item{display:flex;align-items:center;gap:.75rem;padding:.72rem 1.25rem;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:"DM Sans",sans-serif;font-size:.88rem;font-weight:500;color:rgba(255,255,255,.55);transition:background .18s,color .18s;position:relative}
     .nav-item .ni{font-size:1.1rem;flex-shrink:0;width:22px;text-align:center}
     .nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
     .nav-item.active{background:rgba(255,255,255,.12);color:white}
@@ -52,18 +45,19 @@
     .nav-divider{height:1px;background:rgba(255,255,255,.08);margin:.5rem 1rem}
     .sidebar-footer{padding:.75rem 1rem 1.25rem;font-size:.68rem;color:rgba(255,255,255,.25);line-height:1.5}
 
-    /* hamburger for mobile */
-    #hamburger{display:none;position:fixed;top:12px;left:12px;z-index:300;background:var(--navy);border:none;border-radius:10px;width:42px;height:42px;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.3)}
-    #hamburger span{display:block;width:18px;height:2px;background:white;border-radius:2px;transition:all .25s}
-    #hamburger span+span{margin-top:4px}
-    #overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;backdrop-filter:blur(2px)}
+    /* ── BOTTOM TAB BAR (mobile only) ── */
+    #bottomNav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);z-index:200;box-shadow:0 -2px 16px rgba(15,23,42,.1);padding-bottom:env(safe-area-inset-bottom,0px)}
+    .bnav-inner{display:flex}
+    .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:.6rem .25rem;cursor:pointer;border:none;background:none;color:var(--text-m);font-family:"DM Sans",sans-serif;font-size:.58rem;font-weight:600;letter-spacing:.03em;text-transform:uppercase;transition:color .2s;-webkit-tap-highlight-color:transparent;min-height:52px}
+    .bnav-item .bi{font-size:1.25rem;line-height:1}
+    .bnav-item.active{color:var(--navy)}
+    .bnav-item.active .bi{transform:translateY(-1px)}
 
+    /* ── RESPONSIVE ── */
     @media(max-width:700px){
-      #sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%)}
-      #sidebar.open{transform:translateX(0)}
-      #hamburger{display:flex}
-      #screens{padding-top:60px}
-      #overlay.show{display:block}
+      #sidebar{display:none}
+      #bottomNav{display:flex;display:block}
+      #screens{padding-bottom:calc(56px + env(safe-area-inset-bottom,0px))}
     }
 
     /* ── SCROLL AREA ── */
@@ -296,11 +290,16 @@
 <body>
 <div id="wipe"></div>
 
-<!-- HAMBURGER (mobile) -->
-<button id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
-  <span></span><span></span><span></span>
-</button>
-<div id="overlay" onclick="closeSidebar()"></div>
+<!-- BOTTOM NAV (mobile) -->
+<div id="bottomNav">
+  <div class="bnav-inner">
+    <button class="bnav-item active" id="bnav-home" onclick="switchTab('home')"><span class="bi">🏠</span>Home</button>
+    <button class="bnav-item" id="bnav-list" onclick="switchTab('list')"><span class="bi">📋</span>List</button>
+    <button class="bnav-item" id="bnav-sponsor" onclick="switchTab('sponsor')"><span class="bi">🤝</span>Sponsors</button>
+    <button class="bnav-item" id="bnav-resources" onclick="switchTab('resources')"><span class="bi">🔗</span>Resources</button>
+    <button class="bnav-item" id="bnav-me" onclick="switchTab('me')"><span class="bi">⚙️</span>Me</button>
+  </div>
+</div>
 
 <div id="app">
 <!-- SIDEBAR -->
@@ -318,6 +317,27 @@
     <button class="nav-item" id="tab-me" onclick="switchTab('me')"><span class="ni">⚙️</span>Me</button>
   </nav>
   <div class="sidebar-footer">The Unshakable Foundation<br>Portland, OR · Est. 2021</div>
+</div>
+
+<!-- BOTTOM TABS (mobile) -->
+<div id="bottomTabs">
+  <div class="bottom-tabs-inner">
+    <button class="btab active" id="btab-home" onclick="switchTab('home')">
+      <div class="btab-ind"></div><span class="bi">🏠</span>Home
+    </button>
+    <button class="btab" id="btab-list" onclick="switchTab('list')">
+      <div class="btab-ind"></div><span class="bi">📋</span>List
+    </button>
+    <button class="btab" id="btab-sponsor" onclick="switchTab('sponsor')">
+      <div class="btab-ind"></div><span class="bi">🤝</span>Sponsors
+    </button>
+    <button class="btab" id="btab-resources" onclick="switchTab('resources')">
+      <div class="btab-ind"></div><span class="bi">🔗</span>Resources
+    </button>
+    <button class="btab" id="btab-me" onclick="switchTab('me')">
+      <div class="btab-ind"></div><span class="bi">⚙️</span>Me
+    </button>
+  </div>
 </div>
 
 <div id="screens">
@@ -340,7 +360,16 @@
           <p class="memorial-msg">May you find the peace and serenity in eternity that you sought one day at a time.</p>
         </div>
       </div>
-      <div class="home-announce">
+      <div style="margin-top:1.5rem;display:flex;gap:1rem;flex-wrap:wrap">
+        <button onclick="showSubpage('add-page')" style="flex:1;min-width:200px;height:54px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:999px;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(201,106,32,.4);transition:transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;gap:8px" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 32px rgba(201,106,32,.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 24px rgba(201,106,32,.4)'">
+          ＋ Add My Info
+        </button>
+        <button onclick="switchTab('list')" style="flex:1;min-width:200px;height:54px;background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2);border-radius:999px;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">
+          📋 View Phone List
+        </button>
+      </div>
+
+      <div class="home-announce" style="margin-top:1.25rem">
         <div class="ha-header">📢 Announcements</div>
         <div id="homeAnnounceList"></div>
       </div>
@@ -524,6 +553,32 @@
         <button class="submit-btn" onclick="verifyAndEdit()">Verify &amp; Edit</button>
         <div class="msg" id="pinMsg"></div>
       </div>
+      <div class="card" id="grandfatherCard" style="display:none">
+        <p class="card-label">First Time Here?</p>
+        <h2 class="card-title">Create Your PIN</h2>
+        <input type="hidden" id="gfMemberId"/>
+        <div class="privacy-note">
+          👋 You were added to the list before PINs existed. To protect your entry going forward, we just need to verify it's you — then you'll create a PIN.<br><br>
+          This is a one-time setup. Your PIN will protect your info from being changed by anyone else.
+        </div>
+        <div class="field">
+          <label for="gfPhone">Your Phone Number <span class="req">*</span></label>
+          <input type="tel" id="gfPhone" placeholder="Verify it's you — enter your phone number"/>
+          <p class="hint">Must match what's on the list.</p>
+        </div>
+        <div class="field">
+          <label for="gfNewPin">Create a 4-Digit PIN <span class="req">*</span></label>
+          <input type="password" id="gfNewPin" placeholder="e.g. 1234" maxlength="4" inputmode="numeric"/>
+          <p class="hint">Write this down — you'll need it to update your info in the future.</p>
+        </div>
+        <div class="field">
+          <label for="gfNewPin2">Confirm PIN <span class="req">*</span></label>
+          <input type="password" id="gfNewPin2" placeholder="Repeat your PIN" maxlength="4" inputmode="numeric"/>
+        </div>
+        <button class="submit-btn" id="gfBtn" onclick="completeGrandfatherSetup()">Set PIN &amp; Continue</button>
+        <div class="msg" id="gfMsg"></div>
+      </div>
+
       <div class="card" id="editCard" style="display:none">
         <p class="card-label">Edit</p>
         <h2 class="card-title" id="editCardTitle">Your Info</h2>
@@ -598,16 +653,6 @@ window.addEventListener("DOMContentLoaded",()=>{
   document.querySelectorAll(".sh-logo,#homeLogo,#sidebarLogo").forEach(img=>img.src=LOGO_SRC);
 });
 
-// ── SIDEBAR ──
-function toggleSidebar(){
-  document.getElementById("sidebar").classList.toggle("open");
-  document.getElementById("overlay").classList.toggle("show");
-}
-function closeSidebar(){
-  document.getElementById("sidebar").classList.remove("open");
-  document.getElementById("overlay").classList.remove("show");
-}
-
 // ── TABS ──
 let currentTab="home";
 
@@ -616,13 +661,15 @@ function switchTab(tab){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   const scr=document.getElementById(tab+"-screen");
   if(scr) scr.classList.add("active");
-  document.querySelectorAll(".tab-item").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(t=>t.classList.remove("active"));
   const tabEl=document.getElementById("tab-"+tab);
   if(tabEl) tabEl.classList.add("active");
+  document.querySelectorAll(".bnav-item").forEach(t=>t.classList.remove("active"));
+  const bnavEl=document.getElementById("bnav-"+tab);
+  if(bnavEl) bnavEl.classList.add("active");
   
   currentTab=tab;
   document.getElementById("screens").scrollTop=0;
-  closeSidebar();
   if(tab==="list") initList();
   if(tab==="sponsor") initSponsor();
   if(tab==="updates") loadAnnouncement();
@@ -942,33 +989,89 @@ async function verifyAndEdit(){
   const id=document.getElementById("pinMemberId").value;
   const pin=document.getElementById("updatePin").value.trim();
   if(!pin||!/^\d{4}$/.test(pin)){showMsg("pinMsg","Please enter your 4-digit PIN.","error");return;}
-  // Fetch member data and verify via PUT with PIN
-  // We verify by attempting a GET then loading — actual PIN check happens on save
-  // For UX: just open edit form, PIN will be verified on save
   const btn=document.querySelector("#pinCard .submit-btn");
   btn.disabled=true;btn.textContent="Verifying...";
   try{
+    // Try to verify PIN via a lightweight PUT
+    const testRes=await fetch(`/api/member?id=${id}`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer PUBLIC_UPDATE"},
+      body:JSON.stringify({_pinCheck:true,pin})
+    });
+    if(testRes.status===401){
+      showMsg("pinMsg","Incorrect PIN. Please try again.","error");
+      return;
+    }
+    if(testRes.status===428){
+      // 428 = no PIN set — show grandfather flow
+      showNoPinFlow(id, pin);
+      return;
+    }
+    // PIN good — open edit form
     const res=await fetch("/api/members");
     const all=await res.json();
     const m=all.find(x=>x.id===id);
     if(!m)throw new Error("Member not found.");
-    // Store pin for save
     document.getElementById("pinCard").dataset.pin=pin;
     document.getElementById("pinCard").style.display="none";
-    // Open edit form
-    document.getElementById("editId").value=m.id;
-    document.getElementById("editName").value=m.name;
-    document.getElementById("editPhone").value=formatPhone(m.phone);
-    document.getElementById("editEmail").value=m.email||"";
-    document.getElementById("editSobriety").value=m.sobriety_date||"";
-    document.getElementById("editSponsorDrop").value=m.sponsor_dropdown||"";
-    document.getElementById("editSponsorOther").value=m.sponsor_other||"";
-    document.getElementById("editCardTitle").textContent=m.name;
-    const ec=document.getElementById("editCard");ec.style.display="block";
-    ec.scrollIntoView({behavior:"smooth"});
-    document.getElementById("emsg").className="msg";
+    openEditForm(m);
   }catch(e){showMsg("pinMsg",e.message,"error");}
   finally{btn.disabled=false;btn.textContent="Verify & Edit";}
+}
+
+function showNoPinFlow(id, attemptedPin){
+  // Member has no PIN — show grandfather setup flow
+  document.getElementById("pinCard").style.display="none";
+  const gf=document.getElementById("grandfatherCard");
+  document.getElementById("gfMemberId").value=id;
+  gf.style.display="block";
+  gf.scrollIntoView({behavior:"smooth"});
+}
+
+async function completeGrandfatherSetup(){
+  const id=document.getElementById("gfMemberId").value;
+  const phone=document.getElementById("gfPhone").value.trim().replace(/\D/g,"");
+  const newPin=document.getElementById("gfNewPin").value.trim();
+  const newPin2=document.getElementById("gfNewPin2").value.trim();
+  if(!phone||phone.length<7){showMsg("gfMsg","Please enter your phone number to verify your identity.","error");return;}
+  if(!newPin||!/^\d{4}$/.test(newPin)){showMsg("gfMsg","Please enter a 4-digit PIN.","error");return;}
+  if(newPin!==newPin2){showMsg("gfMsg","PINs don't match.","error");return;}
+  const btn=document.getElementById("gfBtn");
+  btn.disabled=true;btn.textContent="Setting up...";
+  try{
+    // Verify phone matches record and set PIN
+    const res=await fetch(`/api/member?id=${id}`,{
+      method:"PUT",
+      headers:{"Content-Type":"application/json","Authorization":"Bearer PUBLIC_UPDATE"},
+      body:JSON.stringify({_setupPin:true,phone,newPin})
+    });
+    if(res.status===401){showMsg("gfMsg","That phone number doesn't match our records. Please contact the admin if you need help.","error");return;}
+    if(!res.ok)throw new Error("Setup failed. Please try again.");
+    // Now open edit form
+    const r2=await fetch("/api/members");
+    const all=await r2.json();
+    const m=all.find(x=>x.id===id);
+    document.getElementById("grandfatherCard").style.display="none";
+    document.getElementById("grandfatherCard").dataset.pin=newPin;
+    document.getElementById("pinCard").dataset.pin=newPin;
+    if(m) openEditForm(m);
+    showMsg("emsg","PIN created! Your info is now protected. You can also update your details below.","success");
+  }catch(e){showMsg("gfMsg",e.message,"error");}
+  finally{btn.disabled=false;btn.textContent="Set PIN & Continue";}
+}
+
+function openEditForm(m){
+  document.getElementById("editId").value=m.id;
+  document.getElementById("editName").value=m.name;
+  document.getElementById("editPhone").value=formatPhone(m.phone);
+  document.getElementById("editEmail").value=m.email||"";
+  document.getElementById("editSobriety").value=m.sobriety_date||"";
+  document.getElementById("editSponsorDrop").value=m.sponsor_dropdown||"";
+  document.getElementById("editSponsorOther").value=m.sponsor_other||"";
+  document.getElementById("editCardTitle").textContent=m.name;
+  const ec=document.getElementById("editCard");ec.style.display="block";
+  ec.scrollIntoView({behavior:"smooth"});
+  document.getElementById("emsg").className="msg";
 }
 
 async function verifyAndRemove(){
@@ -1003,6 +1106,7 @@ function clearSearch(mode){
   if(mode==="update"){
     const ec=document.getElementById("editCard");if(ec)ec.style.display="none";
     const pc=document.getElementById("pinCard");if(pc)pc.style.display="none";
+    const gf=document.getElementById("grandfatherCard");if(gf)gf.style.display="none";
   }
   if(mode==="remove"){
     const cc=document.getElementById("confirmCard");if(cc)cc.style.display="none";
