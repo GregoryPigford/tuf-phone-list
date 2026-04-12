@@ -14,29 +14,29 @@ export default async function handler(req, res) {
   const auth = req.headers.authorization;
   const isAdmin = auth === `Bearer ${process.env.ADMIN_PASSWORD}`;
   const isPublicUpdate = auth === 'Bearer PUBLIC_UPDATE';
-
-  if (req.method === 'DELETE' && !isAdmin) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  if (req.method === 'PUT' && !isAdmin && !isPublicUpdate) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  const isPublicRemove = auth === 'Bearer PUBLIC_REMOVE';
 
   const { id } = req.query;
   if (!id) return res.status(400).json({ error: 'ID required' });
 
   if (req.method === 'DELETE') {
+    // Admin can delete anyone; public can self-remove
+    if (!isAdmin && !isPublicRemove) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { error } = await supabase.from('members').delete().eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ success: true });
   }
 
   if (req.method === 'PUT') {
+    if (!isAdmin && !isPublicUpdate) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender } = req.body;
     const updatePayload = isAdmin
       ? { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender }
       : { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other };
-
     const { error } = await supabase.from('members').update(updatePayload).eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ success: true });
