@@ -12,7 +12,13 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const auth = req.headers.authorization;
-  if (auth !== `Bearer ${process.env.ADMIN_PASSWORD}`) {
+  const isAdmin = auth === `Bearer ${process.env.ADMIN_PASSWORD}`;
+  const isPublicUpdate = auth === 'Bearer PUBLIC_UPDATE';
+
+  if (req.method === 'DELETE' && !isAdmin) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  if (req.method === 'PUT' && !isAdmin && !isPublicUpdate) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -27,9 +33,11 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     const { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender } = req.body;
-    const { error } = await supabase.from('members').update({
-      name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender
-    }).eq('id', id);
+    const updatePayload = isAdmin
+      ? { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender }
+      : { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other };
+
+    const { error } = await supabase.from('members').update(updatePayload).eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ success: true });
   }
