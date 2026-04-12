@@ -196,6 +196,16 @@
 
     /* ── RESOURCES ── */
     #resources-screen{background:var(--slate)}
+    .rcard{display:flex;align-items:center;gap:1rem;border-radius:var(--radius);padding:1.25rem 1.4rem;margin-bottom:.9rem;text-decoration:none;color:white;position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+    .rcard:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(0,0,0,.3)}
+    .rcard:active{transform:scale(.98)}
+    .rcard-bg{position:absolute;inset:0;background:var(--rc,#1a2d4a);z-index:0}
+    .rcard-bg::after{content:"";position:absolute;inset:0;background-image:var(--rp);background-size:auto}
+    .rcard-icon{font-size:1.8rem;position:relative;z-index:1;flex-shrink:0;width:48px;text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))}
+    .rcard-text{flex:1;position:relative;z-index:1}
+    .rcard-title{font-family:"Fraunces",serif;font-size:1rem;font-weight:700;color:white;margin-bottom:3px;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+    .rcard-desc{font-size:.78rem;color:rgba(255,255,255,.72);line-height:1.4}
+    .rcard-arrow{position:relative;z-index:1;font-size:1.1rem;color:rgba(255,255,255,.5);flex-shrink:0}
     .resource-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;text-decoration:none;color:inherit;display:flex;align-items:center;gap:.9rem;transition:transform .18s,box-shadow .18s,border-color .18s;margin-bottom:.75rem}
     .resource-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(15,23,42,.12);border-color:var(--navy)}
     .resource-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0}
@@ -329,10 +339,7 @@
         <div class="hero-text">
           <h1 class="hero-title">The Unshakable Foundation</h1>
           <p class="hero-sub">Reach out. Stay connected.<br>Keep the foundation strong.</p>
-          <div style="display:flex;gap:1rem;flex-wrap:wrap">
-            <button class="hero-cta" onclick="switchTab('list')">📋 View Phone List</button>
-            <button class="hero-cta" onclick="showSubpage('add-page')" style="background:rgba(255,255,255,.15);color:white;box-shadow:none;border:1px solid rgba(255,255,255,.3)">＋ Add My Info</button>
-          </div>
+
         </div>
       </div>
       <div class="memorial">
@@ -342,11 +349,9 @@
           <p class="memorial-msg">May you find the peace and serenity in eternity that you sought one day at a time.</p>
         </div>
       </div>
-      <div style="margin-top:1.5rem">
-        <button onclick="showSubpage('add-page')" style="height:54px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:999px;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(201,106,32,.4);transition:transform .15s,box-shadow .15s;display:flex;align-items:center;justify-content:center;gap:8px" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 32px rgba(201,106,32,.5)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 24px rgba(201,106,32,.4)'">
-          ＋ Add My Info
-        </button>
-
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1.25rem">
+        <button onclick="switchTab('list')" style="flex:1;min-width:160px;height:50px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:999px;font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(201,106,32,.35);transition:transform .15s">📋 View Phone List</button>
+        <button onclick="showSubpage('add-page')" style="flex:1;min-width:160px;height:50px;background:rgba(255,255,255,.12);color:white;border:1px solid rgba(255,255,255,.25);border-radius:999px;font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;cursor:pointer;transition:background .2s">＋ Add My Info</button>
       </div>
 
       <div class="home-announce" style="margin-top:1.25rem">
@@ -405,29 +410,66 @@
   <!-- RESOURCES -->
   <div class="screen" id="resources-screen">
     <div class="inner">
-      <a class="resource-card" href="https://www.aa-intergroup.org" target="_blank" rel="noopener">
-        <div class="resource-icon" style="background:#e8f4fd;color:#1a6b9a">🌐</div>
-        <div><div class="resource-title">AA Online Intergroup</div><div class="resource-desc">Online AA meetings &amp; resources</div></div>
+      <p style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:700;color:var(--navy);margin-bottom:1.1rem">Resources</p>
+
+      <a class="rcard" href="https://www.aa-intergroup.org" target="_blank" rel="noopener" style="--rc:#1a4a7a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;)">
+        <div class="rcard-bg"></div>
+        <div class="rcard-icon">🌐</div>
+        <div class="rcard-text">
+          <div class="rcard-title">AA Online Intergroup</div>
+          <div class="rcard-desc">Online AA meetings &amp; resources worldwide</div>
+        </div>
+        <div class="rcard-arrow">→</div>
       </a>
-      <a class="resource-card" href="mailto:placeholder@gmail.com">
-        <div class="resource-icon" style="background:#fdf0e8;color:#c96a20">✉️</div>
-        <div><div class="resource-title">Group Email</div><div class="resource-desc">Contact the group — update coming soon</div></div>
+
+      <a class="rcard" href="mailto:placeholder@gmail.com" style="--rc:#7a3a1a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E&quot;)">
+        <div class="rcard-bg"></div>
+        <div class="rcard-icon">✉️</div>
+        <div class="rcard-text">
+          <div class="rcard-title">Group Email</div>
+          <div class="rcard-desc">Contact the group — address coming soon</div>
+        </div>
+        <div class="rcard-arrow">→</div>
       </a>
-      <a class="resource-card" href="https://www.aa.org/find-aa" target="_blank" rel="noopener">
-        <div class="resource-icon" style="background:#edf6f0;color:#2d5a1e">📍</div>
-        <div><div class="resource-title">Meeting Verification</div><div class="resource-desc">Verify &amp; find AA meetings — link coming soon</div></div>
+
+      <a class="rcard" href="https://www.aa.org/find-aa" target="_blank" rel="noopener" style="--rc:#1a4a2a;--rp:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='24'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cellipse cx='44' cy='12' rx='44' ry='12'/%3E%3C/g%3E%3C/svg%3E&quot;)">
+        <div class="rcard-bg"></div>
+        <div class="rcard-icon">📍</div>
+        <div class="rcard-text">
+          <div class="rcard-title">Meeting Verification</div>
+          <div class="rcard-desc">Verify &amp; find AA meetings near you</div>
+        </div>
+        <div class="rcard-arrow">→</div>
       </a>
-      <a class="resource-card" href="https://www.aa.org/daily-reflections" target="_blank" rel="noopener">
-        <div class="resource-icon" style="background:#f0edf6;color:#5a2d82">📖</div>
-        <div><div class="resource-title">Daily Reflection</div><div class="resource-desc">Today's reading from AA.org</div></div>
+
+      <a class="rcard" href="https://www.aa.org/daily-reflections" target="_blank" rel="noopener" style="--rc:#3a1a6a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Ccircle cx='3' cy='3' r='3'/%3E%3Ccircle cx='13' cy='13' r='3'/%3E%3C/g%3E%3C/svg%3E&quot;)">
+        <div class="rcard-bg"></div>
+        <div class="rcard-icon">📖</div>
+        <div class="rcard-text">
+          <div class="rcard-title">Daily Reflection</div>
+          <div class="rcard-desc">Today's reading from AA.org</div>
+        </div>
+        <div class="rcard-arrow">→</div>
       </a>
-      <a class="resource-card" href="tel:988">
-        <div class="resource-icon" style="background:#fdf0f0;color:#991b1b">🆘</div>
-        <div><div class="resource-title">Mental Health Crisis Line</div><div class="resource-desc">Call or text 988 — free, 24/7</div></div>
+
+      <a class="rcard" href="tel:988" style="--rc:#6a1a1a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E&quot;)">
+        <div class="rcard-bg"></div>
+        <div class="rcard-icon">🆘</div>
+        <div class="rcard-text">
+          <div class="rcard-title">Mental Health Crisis Line</div>
+          <div class="rcard-desc">Call or text <strong style="color:white">988</strong> — free, 24/7</div>
+        </div>
+        <div class="rcard-arrow">→</div>
       </a>
-      <a class="resource-card" href="https://www.samhsa.gov/find-help/national-helpline" target="_blank" rel="noopener">
-        <div class="resource-icon" style="background:#fdf6e8;color:#92600a">🤝</div>
-        <div><div class="resource-title">SAMHSA Helpline</div><div class="resource-desc">1-800-662-4357 · Free &amp; confidential</div></div>
+
+      <a class="rcard" href="https://www.samhsa.gov/find-help/national-helpline" target="_blank" rel="noopener" style="--rc:#4a3a0a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.07'%3E%3Cpath d='M8 16c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6zm33.414-6l15.092 15.092-1.414 1.414L40 9.414 24.908 24.506l-1.414-1.414L38.586 8H41.414zM20 48c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8zm0-2c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6 2.686 6 6 6z'/%3E%3C/g%3E%3C/svg%3E&quot;)">
+        <div class="rcard-bg"></div>
+        <div class="rcard-icon">🤝</div>
+        <div class="rcard-text">
+          <div class="rcard-title">SAMHSA Helpline</div>
+          <div class="rcard-desc">1-800-662-4357 · Free &amp; confidential</div>
+        </div>
+        <div class="rcard-arrow">→</div>
       </a>
     </div>
   </div>
