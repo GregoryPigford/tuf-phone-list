@@ -389,7 +389,10 @@
         </div>
         <div class="list-header-row">
           <p class="list-meta" id="listMeta"></p>
-          <button class="print-btn" onclick="window.print()">⎙ Print</button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button onclick="showSubpage('add-page')" style="height:34px;padding:0 14px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--navy);border:none;border-radius:999px;font-family:Fraunces,serif;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap">＋ Add My Info</button>
+            <button class="print-btn" onclick="window.print()">⎙ Print</button>
+          </div>
         </div>
         <div class="member-cards" id="memberCards"></div>
         <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Sobriety Date</th><th>Sponsor?</th></tr></thead><tbody id="listBody"></tbody></table></div>
