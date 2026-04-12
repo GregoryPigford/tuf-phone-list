@@ -391,7 +391,10 @@
         </div>
       </div>
       <div class="info-box">✏️ To change which list you appear on, contact the meeting admin.</div>
-      <button class="submit-btn" id="saveBtn" onclick="saveUpdate()">Save Changes</button>
+      <div style="display:flex;gap:10px">
+        <button class="submit-btn" id="saveBtn" onclick="saveUpdate()" style="flex:1">Save Changes</button>
+        <button onclick="cancelEdit()" style="flex:0 0 auto;height:50px;padding:0 20px;background:none;border:1.5px solid var(--border);border-radius:999px;font-family:inherit;font-size:.9rem;color:var(--text-s);cursor:pointer">Cancel</button>
+      </div>
       <div class="msg" id="emsg"></div>
     </div>
     <div style="text-align:center;padding:1.5rem 0 0">
@@ -485,35 +488,51 @@ function goTo(id){const w=document.getElementById("wipe");TRANS[Math.floor(Math.
 function preCheckGender(){
   const saved=localStorage.getItem("tuf_gender");
   if(!saved) return;
+  // Check the right radio
   const radio=document.querySelector(`input[name='gender'][value='${saved}']`);
-  if(radio){
-    radio.checked=true;
-    radio.closest(".gender-opt").classList.add("selected");
-    // Add a small note that this was pre-filled
-    const existing=document.getElementById("genderPrefillNote");
-    if(!existing){
-      const note=document.createElement("p");
-      note.id="genderPrefillNote";
-      note.style.cssText="font-size:.72rem;color:var(--text-m);margin-top:.4rem;font-style:italic";
-      note.textContent="Pre-filled based on your list preference. Change if needed.";
-      radio.closest(".gender-group").after(note);
-    }
+  if(!radio) return;
+  radio.checked=true;
+  radio.closest(".gender-opt").classList.add("selected");
+  // Freeze all gender options - disable clicking
+  document.querySelectorAll(".gender-opt").forEach(opt=>{
+    opt.style.pointerEvents="none";
+    opt.style.opacity="0.75";
+  });
+  // Highlight the selected one fully
+  radio.closest(".gender-opt").style.opacity="1";
+  radio.closest(".gender-opt").style.borderColor="var(--navy)";
+  // Add a note
+  const existing=document.getElementById("genderPrefillNote");
+  if(!existing){
+    const note=document.createElement("p");
+    note.id="genderPrefillNote";
+    note.style.cssText="font-size:.72rem;color:var(--text-m);margin-top:.5rem;font-style:italic;line-height:1.5";
+    const label=saved==="male"?"Men's":"Women's";
+    note.textContent=`Set to ${label} based on your list preference. To change this, use "Reset my list preference" in Update My Info.`;
+    radio.closest(".gender-group").after(note);
   }
 }
 function buildListTab() {
   const saved = localStorage.getItem("tuf_gender") || currentTab;
-  const label = saved === "male" ? "Men's List" : "Women's List";
+  currentTab = (saved === "male" || saved === "female") ? saved : "male";
+  const label = currentTab === "male" ? "Men's List" : "Women's List";
   const row = document.getElementById("listTabRow");
-  if (row) row.innerHTML = `<button class="gtab active">${label}</button>`;
-  currentTab = saved;
+  if (row) row.innerHTML = `<button class="gtab active" style="flex:1">${label}</button>`;
 }
 
 function goToList(){
   const saved = localStorage.getItem("tuf_gender");
   if(saved === "male" || saved === "female"){
     currentTab = saved;
-    goTo("list-page");
-    loadMembers();
+    const w=document.getElementById("wipe");
+    TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{
+      document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+      document.getElementById("list-page").classList.add("active");
+      window.scrollTo(0,0);
+      hideWipe(w);
+      buildListTab();
+      loadMembers();
+    });
   } else {
     goTo("gender-gate");
   }
@@ -626,6 +645,13 @@ async function searchFor(mode){
 }
 
 async function openEdit(id){const res=await fetch("/api/members");const all=await res.json();const m=all.find(x=>x.id===id);if(!m)return;document.getElementById("editId").value=m.id;document.getElementById("editName").value=m.name;document.getElementById("editPhone").value=formatPhone(m.phone);document.getElementById("editEmail").value=m.email||"";document.getElementById("editSobriety").value=m.sobriety_date||"";document.getElementById("editSponsorDrop").value=m.sponsor_dropdown||"";document.getElementById("editSponsorOther").value=m.sponsor_other||"";document.getElementById("editCardTitle").textContent=m.name;document.getElementById("editCard").style.display="block";document.getElementById("editCard").scrollIntoView({behavior:"smooth"});document.getElementById("emsg").className="msg";}
+function cancelEdit(){
+  document.getElementById("editCard").style.display="none";
+  document.getElementById("updateResults").innerHTML="";
+  document.getElementById("updateSearch").value="";
+  document.getElementById("emsg").className="msg";
+}
+
 async function saveUpdate(){const btn=document.getElementById("saveBtn"),id=document.getElementById("editId").value;const body={name:document.getElementById("editName").value.trim(),phone:document.getElementById("editPhone").value.trim(),email:document.getElementById("editEmail").value.trim()||null,sobriety_date:document.getElementById("editSobriety").value||null,sponsor_dropdown:document.getElementById("editSponsorDrop").value||null,sponsor_other:document.getElementById("editSponsorOther").value.trim()||null};btn.disabled=true;btn.textContent="Saving...";try{const res=await fetch(`/api/member?id=${id}`,{method:"PUT",headers:{"Content-Type":"application/json","Authorization":"Bearer PUBLIC_UPDATE"},body:JSON.stringify(body)});if(!res.ok)throw new Error("Save failed.");showMsg("emsg","Your info has been updated!","success");}catch(e){showMsg("emsg",e.message,"error");}finally{btn.disabled=false;btn.textContent="Save Changes";}}
 
 function openConfirmRemove(id,name){document.getElementById("removeId").value=id;document.getElementById("confirmTitle").textContent=name;document.getElementById("confirmCard").style.display="block";document.getElementById("confirmCard").scrollIntoView({behavior:"smooth"});document.getElementById("rmsg").className="msg";}
