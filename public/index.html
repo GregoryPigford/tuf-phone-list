@@ -403,6 +403,7 @@
     </button>
     <p style="font-size:.68rem;color:var(--text-m);margin-top:4px;opacity:.5">Use this if you selected the wrong list when you first visited.</p>
   </div>
+  </div>
 </div>
 
 <!-- REMOVE -->
@@ -449,7 +450,7 @@
       <p class="list-meta" id="listMeta"></p>
       <button class="print-btn" onclick="window.print()">⎙ Print</button>
     </div>
-    <div class="member-cards" id="memberCards"></div>
+    <div class="member-cards" id="memberCards"><p style="text-align:center;padding:3rem;color:var(--text-m)">Loading...</p></div>
     <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Sobriety Date</th><th>Sponsor?</th></tr></thead><tbody id="listBody"></tbody></table></div>
   </div>
 </div>
@@ -483,7 +484,7 @@ const TRANS=[
 ];
 function rAF(fn){requestAnimationFrame(fn);}
 function hideWipe(w){w.style.transition="opacity .25s ease";w.style.opacity="0";setTimeout(()=>{w.style.pointerEvents="none";w.style.clipPath="none";w.style.transform="none";},260);}
-function goTo(id){const w=document.getElementById("wipe");TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);hideWipe(w);if(id==="form-page") preCheckGender();});}
+function goTo(id){const w=document.getElementById("wipe");TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);try{hideWipe(w);}catch(e){console.error("hideWipe error:",e);w.style.opacity="0";w.style.pointerEvents="none";}try{if(id==="form-page") preCheckGender();}catch(e){console.error("preCheckGender error:",e);}});}
 
 function preCheckGender(){
   const saved=localStorage.getItem("tuf_gender");
@@ -578,7 +579,8 @@ async function loadMembers(){
     try{renderList();}catch(e){console.error("renderList error:",e);document.getElementById("memberCards").innerHTML=`<p style="padding:2rem;color:red">Error: ${e.message}</p>`;}
   }catch(e){
     console.error("fetch error:",e);
-    document.getElementById("memberCards").innerHTML='<p style="text-align:center;padding:2rem;color:var(--text-m)">Unable to load. Please try again.</p>';
+    const errEl = document.getElementById("memberCards");
+    if(errEl) errEl.innerHTML=`<div style="padding:2rem;background:#fee2e2;border-radius:1rem;margin:1rem 0;color:#7f1d1d;font-size:1rem;line-height:1.6"><strong>Error loading list:</strong><br>${e.message}<br><br>Please check your connection and try again.</div>`;
   }
 }
 
