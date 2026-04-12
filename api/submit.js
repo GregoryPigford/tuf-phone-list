@@ -1,9 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
+
+function hashPin(pin) {
+  return crypto.createHash('sha256').update(pin + 'tuf2021salt').digest('hex');
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,26 +17,31 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender } = req.body;
+  const { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender, pin } = req.body;
 
   if (!name || !phone || !gender) {
     return res.status(400).json({ error: 'Name, phone, and gender are required.' });
   }
-
-  const { error } = await supabase.from('members').insert([{
-    name: name.trim(),
-    phone: phone.trim(),
-    email: email?.trim() || null,
-    sobriety_date: sobriety_date || null,
-    sponsor_dropdown: sponsor_dropdown || null,
-    sponsor_other: sponsor_other?.trim() || null,
-    gender
-  }]);
-
-  if (error) {
-    console.error(error);
-    return res.status(500).json({ error: 'Failed to save. Please try again.' });
+  if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+    return res.status(400).json({ error: 'A 4-digit PIN is required.' });
   }
 
-  return res.status(200).json({ success: true });
+  const pin_hash = hashPin(pin);
+
+  const { data, error } = await supabase.from('members').insert([{
+    name, phone,
+    email: email || null,
+    sobriety_date: sobriety_date || null,
+    sponsor_dropdown: sponsor_dropdown || null,
+    sponsor_other: sponsor_other || null,
+    gender,
+    pin_hash
+  }]).select();
+
+  if (error) {
+    console.error('Insert error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+
+  return res.status(200).json({ success: true, id: data[0].id });
 }
