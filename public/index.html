@@ -524,15 +524,8 @@ function goToList(){
   const saved = localStorage.getItem("tuf_gender");
   if(saved === "male" || saved === "female"){
     currentTab = saved;
-    const w=document.getElementById("wipe");
-    TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{
-      document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-      document.getElementById("list-page").classList.add("active");
-      window.scrollTo(0,0);
-      hideWipe(w);
-      buildListTab();
-      loadMembers();
-    });
+    goTo("list-page");
+    setTimeout(()=>{ buildListTab(); loadMembers(); }, 50);
   } else {
     goTo("gender-gate");
   }
