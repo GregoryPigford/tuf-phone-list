@@ -724,9 +724,9 @@ function switchTab(tab){
   document.querySelectorAll(".nav-item").forEach(t=>t.classList.remove("active"));
   const tabEl=document.getElementById("tab-"+tab);
   if(tabEl) tabEl.classList.add("active");
-  document.querySelectorAll(".bnav-item").forEach(t=>t.classList.remove("active"));
-  const bnavEl=document.getElementById("bnav-"+tab);
-  if(bnavEl) bnavEl.classList.add("active");
+  document.querySelectorAll(".btab").forEach(t=>t.classList.remove("active"));
+  const btabEl=document.getElementById("btab-"+tab);
+  if(btabEl) btabEl.classList.add("active");
   
   currentTab=tab;
   document.getElementById("screens").scrollTop=0;
