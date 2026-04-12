@@ -540,7 +540,7 @@ function isSponsorCandidate(m) {
   const o = (m.sponsor_other || "").toLowerCase();
   // Include: Ask me, Other (with text), Yes, Temporarily, Sober support
   // Exclude: No, Not yet, empty
-  return d === "ask me" || d === "other" || d === "yes" || d === "temporarily" || d === "sober support";
+  return d === "ask me" || d === "yes" || d === "temporarily";
 }
 
 function renderSponsorList() {
