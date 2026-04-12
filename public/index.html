@@ -484,7 +484,7 @@ const TRANS=[
 ];
 function rAF(fn){requestAnimationFrame(fn);}
 function hideWipe(w){w.style.transition="opacity .25s ease";w.style.opacity="0";setTimeout(()=>{w.style.pointerEvents="none";w.style.clipPath="none";w.style.transform="none";},260);}
-function goTo(id){const w=document.getElementById("wipe");TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);try{hideWipe(w);}catch(e){console.error("hideWipe error:",e);w.style.opacity="0";w.style.pointerEvents="none";}try{if(id==="form-page") preCheckGender();}catch(e){console.error("preCheckGender error:",e);}});}
+function goTo(id){const w=document.getElementById("wipe");TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);try{hideWipe(w);}catch(e){w.style.opacity="0";w.style.pointerEvents="none";}if(id==="form-page") setTimeout(preCheckGender, 50);});}
 
 function preCheckGender(){
   const saved=localStorage.getItem("tuf_gender");
@@ -523,11 +523,12 @@ function buildListTab() {
 
 function goToList(){
   const saved = localStorage.getItem("tuf_gender");
+  console.log("goToList: saved gender =", saved);
   if(saved === "male" || saved === "female"){
     currentTab = saved;
     currentSponsorTab = saved;
     goTo("list-page");
-    setTimeout(()=>{ buildListTab(); loadMembers(); }, 50);
+    setTimeout(()=>{ buildListTab(); loadMembers(); }, 100);
   } else {
     goTo("gender-gate");
   }
@@ -539,11 +540,12 @@ function resetGenderChoice(){
 }
 
 function chooseGender(gender){
+  console.log("chooseGender called with:", gender);
   localStorage.setItem("tuf_gender", gender);
   currentTab = gender;
   currentSponsorTab = gender;
   goTo("list-page");
-  setTimeout(()=>{ buildListTab(); loadMembers(); }, 50);
+  setTimeout(()=>{ buildListTab(); loadMembers(); }, 100);
 }
 function goToSponsor(){
   const saved = localStorage.getItem("tuf_gender");
