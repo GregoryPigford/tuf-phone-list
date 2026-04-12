@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TUF Phone List — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #faf7f2;
+      --warm-white: #fff9f2;
+      --brown: #5c3d2e;
+      --brown-light: #8b6355;
+      --gold: #c9973a;
+      --gold-light: #e8c07a;
+      --text: #2d1f17;
+      --text-muted: #7a5c50;
+      --border: #ddd0c4;
+      --success: #4a7c59;
+      --error: #8b3a3a;
+      --sidebar: 220px;
+    }
+
+    body {
+      background: var(--cream);
+      color: var(--text);
+      font-family: 'Source Sans 3', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* ── LOGIN ── */
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .login-card {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 2px 20px rgba(92,61,46,0.08);
+    }
+
+    .login-card h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      color: var(--brown);
+      margin-bottom: 0.4rem;
+    }
+
+    .login-card p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.5rem; }
+
+    .login-card input {
+      width: 100%;
+      height: 44px;
+      padding: 0 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--cream);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .login-card input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,151,58,0.12); }
+
+    .btn-primary {
+      width: 100%;
+      height: 44px;
+      background: var(--brown);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--brown-light); }
+
+    .login-error { color: var(--error); font-size: 0.85rem; margin-top: 0.75rem; display: none; }
+
+    /* ── APP SHELL ── */
+    #appShell { display: none; min-height: 100vh; }
+
+    .topbar {
+      background: var(--brown);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem;
+      letter-spacing: 0.02em;
+    }
+
+    .topbar-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .tab-btn {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.22); }
+    .tab-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; }
+
+    .logout-btn {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.7);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .logout-btn:hover { border-color: rgba(255,255,255,0.6); color: #fff; }
+
+    .main { padding: 1.5rem; max-width: 1100px; margin: 0 auto; }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.8rem 1.2rem;
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+    .stat-value { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--brown); margin-top: 2px; }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      color: var(--brown);
+    }
+
+    .print-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .print-btn:hover { border-color: var(--gold); color: var(--brown); }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f5ede4; }
+    th {
+      padding: 10px 14px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-align: left;
+    }
+
+    td {
+      padding: 11px 14px;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fef9f2; }
+
+    .name-cell { font-weight: 500; color: var(--brown); }
+
+    .action-btns { display: flex; gap: 6px; }
+
+    .edit-btn, .del-btn {
+      border: none;
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-family: inherit;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .edit-btn { background: #e8f0e8; color: #3a5c3a; }
+    .edit-btn:hover { opacity: 0.8; }
+    .del-btn { background: #f5e8e8; color: var(--error); }
+    .del-btn:hover { opacity: 0.8; }
+
+    .empty-row td {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2rem;
+      font-style: italic;
+    }
+
+    /* ── MODAL (Edit) ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--warm-white);
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    }
+
+    .modal h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--brown);
+      margin-bottom: 1.2rem;
+    }
+
+    .modal .field { margin-bottom: 1rem; }
+    .modal label { display: block; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.35rem; }
+    .modal input, .modal select {
+      width: 100%;
+      height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--cream);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+    .modal input:focus, .modal select:focus { outline: none; border-color: var(--gold); }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 1.5rem; }
+    .modal-actions .btn-primary { flex: 1; }
+    .cancel-btn {
+      flex: 1;
+      height: 44px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .cancel-btn:hover { border-color: var(--brown-light); color: var(--brown); }
+
+    /* ── PRINT VIEW ── */
+    @media print {
+      .topbar, .stats-bar, .table-header, .action-btns, #loginScreen { display: none !important; }
+      body { background: white; }
+      .main { padding: 0; max-width: 100%; }
+      .print-section { display: block !important; }
+      table { font-size: 9pt; }
+      .table-wrap { border: none; border-radius: 0; }
+      .print-header { display: block !important; margin-bottom: 12pt; }
+    }
+
+    .print-header { display: none; }
+
+    /* Sober time display */
+    .sober-time {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>TUF Admin</h1>
+    <p>Phone List Administration</p>
+    <input type="password" id="passwordInput" placeholder="Password" onkeydown="if(event.key==='Enter')login()" />
+    <button class="btn-primary" onclick="login()">Sign In</button>
+    <p class="login-error" id="loginError">Incorrect password.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appShell">
+  <div class="topbar">
+    <span class="topbar-title">TUF Phone List — Admin</span>
+    <div class="topbar-right">
+      <button class="tab-btn active" onclick="showTab('all')" id="tab-all">All Members</button>
+      <button class="tab-btn" onclick="showTab('male')" id="tab-male">Men</button>
+      <button class="tab-btn" onclick="showTab('female')" id="tab-female">Women</button>
+      <button class="tab-btn" onclick="showTab('nonbinary')" id="tab-nonbinary">Nonbinary</button>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="stats-bar" id="statsBar">
+      <div class="stat"><div class="stat-label">Total Members</div><div class="stat-value" id="statTotal">—</div></div>
+      <div class="stat"><div class="stat-label">Men</div><div class="stat-value" id="statMen">—</div></div>
+      <div class="stat"><div class="stat-label">Women</div><div class="stat-value" id="statWomen">—</div></div>
+      <div class="stat"><div class="stat-label">Nonbinary</div><div class="stat-value" id="statNonbinary">—</div></div>
+      <div class="stat"><div class="stat-label">Combined Sober Time</div><div class="stat-value sober-time" id="statSober">—</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <span class="table-title" id="tableTitle">All Members</span>
+        <button class="print-btn" onclick="printList()">⎙ Print List</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Sobriety Date</th>
+            <th>Willing to Sponsor</th>
+            <th>List</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="membersTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h2>Edit Member</h2>
+    <input type="hidden" id="editId" />
+    <div class="field"><label>Name</label><input type="text" id="editName" /></div>
+    <div class="field"><label>Phone</label><input type="tel" id="editPhone" /></div>
+    <div class="field"><label>Email</label><input type="email" id="editEmail" /></div>
+    <div class="field"><label>Sobriety Date</label><input type="date" id="editSobriety" /></div>
+    <div class="field">
+      <label>Willing to Sponsor</label>
+      <select id="editSponsorDrop">
+        <option value="">Select...</option>
+        <option value="Yes">Yes</option>
+        <option value="Ask me">Ask me</option>
+        <option value="No">No</option>
+        <option value="Not yet">Not yet</option>
+        <option value="Sober support">Sober support only</option>
+        <option value="Temporarily">Temporarily</option>
+        <option value="Other">Other (specify below)</option>
+      </select>
+    </div>
+    <div class="field"><label>Sponsor note</label><input type="text" id="editSponsorOther" placeholder="e.g. locally only" /></div>
+    <div class="field">
+      <label>List</label>
+      <select id="editGender">
+        <option value="male">Men's</option>
+        <option value="female">Women's</option>
+        <option value="nonbinary">Nonbinary</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let token = '';
+  let allMembers = [];
+  let currentTab = 'all';
+
+  function login() {
+    const pw = document.getElementById('passwordInput').value;
+    document.getElementById('loginError').style.display = 'none';
+    fetch('/api/members?admin=1', { headers: { Authorization: `Bearer ${pw}` } })
+      .then(r => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then(data => {
+        token = pw;
+        allMembers = data;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appShell').style.display = 'block';
+        renderStats();
+        renderTable();
+      })
+      .catch(() => {
+        document.getElementById('loginError').style.display = 'block';
+      });
+  }
+
+  function logout() {
+    token = '';
+    allMembers = [];
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appShell').style.display = 'none';
+    document.getElementById('passwordInput').value = '';
+  }
+
+  function showTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    const titles = { all: 'All Members', male: "Men's List", female: "Women's List", nonbinary: 'Nonbinary List' };
+    document.getElementById('tableTitle').textContent = titles[tab];
+    renderTable();
+  }
+
+  function filteredMembers() {
+    if (currentTab === 'all') return allMembers;
+    return allMembers.filter(m => m.gender === currentTab);
+  }
+
+  function sponsorDisplay(m) {
+    const parts = [m.sponsor_dropdown, m.sponsor_other].filter(Boolean);
+    return parts.join(', ') || '—';
+  }
+
+  function soberYearsDays(members) {
+    let totalDays = 0;
+    const today = new Date();
+    members.forEach(m => {
+      if (m.sobriety_date) {
+        const d = new Date(m.sobriety_date);
+        const diff = Math.floor((today - d) / (1000 * 60 * 60 * 24));
+        if (diff > 0) totalDays += diff;
+      }
+    });
+    const years = Math.floor(totalDays / 365);
+    const days = totalDays % 365;
+    return `${years}y ${days}d`;
+  }
+
+  function renderStats() {
+    document.getElementById('statTotal').textContent = allMembers.length;
+    document.getElementById('statMen').textContent = allMembers.filter(m => m.gender === 'male').length;
+    document.getElementById('statWomen').textContent = allMembers.filter(m => m.gender === 'female').length;
+    document.getElementById('statNonbinary').textContent = allMembers.filter(m => m.gender === 'nonbinary').length;
+    document.getElementById('statSober').textContent = soberYearsDays(allMembers);
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('membersTbody');
+    const members = filteredMembers();
+    if (!members.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No members in this list yet.</td></tr>';
+      return;
+    }
+    const genderLabel = { male: "Men's", female: "Women's", nonbinary: 'Nonbinary' };
+    tbody.innerHTML = members.map(m => `
+      <tr>
+        <td class="name-cell">${esc(m.name)}</td>
+        <td>${esc(m.phone)}</td>
+        <td>${m.email ? esc(m.email) : '—'}</td>
+        <td>${m.sobriety_date ? formatDate(m.sobriety_date) : '—'}</td>
+        <td>${esc(sponsorDisplay(m))}</td>
+        <td>${genderLabel[m.gender]}</td>
+        <td>
+          <div class="action-btns">
+            <button class="edit-btn" onclick="openEdit('${m.id}')">Edit</button>
+            <button class="del-btn" onclick="deleteMember('${m.id}', '${esc(m.name)}')">Remove</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function formatDate(d) {
+    const [y, m, day] = d.split('-');
+    return `${parseInt(m)}/${parseInt(day)}/${y.slice(2)}`;
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function openEdit(id) {
+    const m = allMembers.find(x => x.id === id);
+    if (!m) return;
+    document.getElementById('editId').value = m.id;
+    document.getElementById('editName').value = m.name;
+    document.getElementById('editPhone').value = m.phone;
+    document.getElementById('editEmail').value = m.email || '';
+    document.getElementById('editSobriety').value = m.sobriety_date || '';
+    document.getElementById('editSponsorDrop').value = m.sponsor_dropdown || '';
+    document.getElementById('editSponsorOther').value = m.sponsor_other || '';
+    document.getElementById('editGender').value = m.gender;
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('editModal').classList.remove('open');
+  }
+
+  async function saveEdit() {
+    const id = document.getElementById('editId').value;
+    const body = {
+      name: document.getElementById('editName').value.trim(),
+      phone: document.getElementById('editPhone').value.trim(),
+      email: document.getElementById('editEmail').value.trim() || null,
+      sobriety_date: document.getElementById('editSobriety').value || null,
+      sponsor_dropdown: document.getElementById('editSponsorDrop').value || null,
+      sponsor_other: document.getElementById('editSponsorOther').value.trim() || null,
+      gender: document.getElementById('editGender').value,
+    };
+    const res = await fetch(`/api/member?id=${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      const idx = allMembers.findIndex(x => x.id === id);
+      allMembers[idx] = { ...allMembers[idx], ...body };
+      allMembers.sort((a, b) => a.name.localeCompare(b.name));
+      closeModal();
+      renderStats();
+      renderTable();
+    } else {
+      alert('Save failed. Please try again.');
+    }
+  }
+
+  async function deleteMember(id, name) {
+    if (!confirm(`Remove ${name} from the list?`)) return;
+    const res = await fetch(`/api/member?id=${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (res.ok) {
+      allMembers = allMembers.filter(m => m.id !== id);
+      renderStats();
+      renderTable();
+    } else {
+      alert('Delete failed. Please try again.');
+    }
+  }
+
+  function printList() {
+    window.print();
+  }
+
+  // Close modal on overlay click
+  document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // Enter key on login
+  document.getElementById('passwordInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  // Poll for new submissions every 60s while admin is open
+  setInterval(() => {
+    if (!token) return;
+    fetch('/api/members?admin=1', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && data.length !== allMembers.length) {
+          allMembers = data;
+          renderStats();
+          renderTable();
+        }
+      });
+  }, 60000);
+</script>
+</body>
+</html>
