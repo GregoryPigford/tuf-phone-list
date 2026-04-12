@@ -587,8 +587,17 @@ function renderSoberversaries(){
 
 function soberStr(members){let days=0;const today=new Date(),seen=new Set();members.forEach(m=>{if(!m.sobriety_date||seen.has(m.name))return;seen.add(m.name);const diff=Math.floor((today-new Date(m.sobriety_date+"T00:00:00"))/86400000);if(diff>0)days+=diff;});const years=Math.floor(days/365),rem=days%365;return`${years.toLocaleString()} ${years===1?"Year":"Years"}, ${rem} ${rem===1?"Day":"Days"}`;}
 function displayMembers(){return allMembers.filter(m=>m.gender===currentTab||m.gender==="nonbinary");}
-function renderStats(){const f=displayMembers();document.getElementById("statCount").textContent=f.length;document.getElementById("statSober").textContent=soberStr(f);document.getElementById("listSub").textContent=`${f.length} members`;document.getElementById("listMeta").textContent=`${currentTab==="male"?"Men's":"Women's"} list`;}
-function switchTab(tab){currentTab=tab;document.querySelectorAll(".gtab").forEach(b=>b.classList.remove("active"));document.getElementById("gtab-"+tab).classList.add("active");document.getElementById("listHeading").textContent=tab==="male"?"Men's List":"Women's List";renderStats();renderList();}
+function renderStats(){
+  const f=displayMembers();
+  const setEl=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  setEl("statCount",f.length);
+  setEl("statSober",soberStr(f));
+  setEl("listSub",`${f.length} members`);
+  setEl("listMeta",`${currentTab==="male"?"Men's":"Women's"} list`);
+  setEl("listHeading",currentTab==="male"?"Men's List":"Women's List");
+  buildListTab();
+}
+function switchTab(tab){currentTab=tab;renderStats();renderList();}
 
 function renderList(){
   const members=displayMembers();
