@@ -440,18 +440,31 @@
     <button class="back-btn" onclick="goTo('home')">← Home</button>
   </div>
   <div class="inner">
-    <div id="soberBlock"></div>
-    <div class="stats-row">
-      <div class="stat"><div class="stat-label">Members</div><div class="stat-value" id="statCount">—</div></div>
-      <div class="stat"><div class="stat-label">Combined Sober Time</div><div class="stat-value" id="statSober">—</div></div>
+    <!-- Inline gender gate - shown when no gender saved -->
+    <div id="inlineGate" style="display:none;text-align:center;padding:2rem 1rem">
+      <h2 style="font-family:Fraunces,serif;font-size:1.5rem;font-weight:900;color:var(--navy);margin-bottom:.5rem">Which list would you like to view?</h2>
+      <p style="font-size:.88rem;color:var(--text-s);margin-bottom:1.5rem;line-height:1.6">Your choice will be remembered on this device.</p>
+      <div style="display:flex;flex-direction:column;gap:.75rem;max-width:320px;margin:0 auto">
+        <button class="gate-btn gate-btn-men" onclick="chooseGender('male')">Men's List</button>
+        <button class="gate-btn gate-btn-women" onclick="chooseGender('female')">Women's List</button>
+      </div>
+      <p style="margin-top:1.25rem;font-size:.72rem;color:var(--text-m);line-height:1.6;max-width:300px;margin-left:auto;margin-right:auto;font-style:italic">* We recognize that gender exists beyond these two categories. We list Men's and Women's to match our meeting's existing structure — all are welcome regardless of how you identify.</p>
     </div>
-    <div id="listTabRow" class="gender-tabs"></div>
-    <div class="list-header-row">
-      <p class="list-meta" id="listMeta"></p>
-      <button class="print-btn" onclick="window.print()">⎙ Print</button>
+    <!-- Actual list content -->
+    <div id="listContent" style="display:none">
+      <div id="soberBlock"></div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-label">Members</div><div class="stat-value" id="statCount">—</div></div>
+        <div class="stat"><div class="stat-label">Combined Sober Time</div><div class="stat-value" id="statSober">—</div></div>
+      </div>
+      <div id="listTabRow" class="gender-tabs"></div>
+      <div class="list-header-row">
+        <p class="list-meta" id="listMeta"></p>
+        <button class="print-btn" onclick="window.print()">⎙ Print</button>
+      </div>
+      <div class="member-cards" id="memberCards"></div>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Sobriety Date</th><th>Sponsor?</th></tr></thead><tbody id="listBody"></tbody></table></div>
     </div>
-    <div class="member-cards" id="memberCards"><p style="text-align:center;padding:3rem;color:var(--text-m)">Loading...</p></div>
-    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Sobriety Date</th><th>Sponsor?</th></tr></thead><tbody id="listBody"></tbody></table></div>
   </div>
 </div>
 
@@ -523,39 +536,43 @@ function buildListTab() {
 
 function goToList(){
   const saved = localStorage.getItem("tuf_gender");
-  console.log("goToList: saved gender =", saved);
   if(saved === "male" || saved === "female"){
     currentTab = saved;
     currentSponsorTab = saved;
-    goTo("list-page");
-    setTimeout(()=>{ buildListTab(); loadMembers(); }, 100);
-  } else {
-    goTo("gender-gate");
   }
+  goTo("list-page");
+  setTimeout(()=>{ buildListTab(); loadMembers(); }, 100);
 }
 
 function resetGenderChoice(){
   localStorage.removeItem("tuf_gender");
-  goTo("gender-gate");
+  currentTab = "male";
+  currentSponsorTab = "male";
+  goTo("list-page");
+  setTimeout(()=>{ loadMembers(); }, 100);
 }
 
 function chooseGender(gender){
-  console.log("chooseGender called with:", gender);
   localStorage.setItem("tuf_gender", gender);
   currentTab = gender;
   currentSponsorTab = gender;
-  goTo("list-page");
-  setTimeout(()=>{ buildListTab(); loadMembers(); }, 100);
+  // Hide the inline gate and show the list
+  document.getElementById("inlineGate").style.display = "none";
+  document.getElementById("listContent").style.display = "block";
+  buildListTab();
+  loadMembers();
 }
 function goToSponsor(){
   const saved = localStorage.getItem("tuf_gender");
   if(saved === "male" || saved === "female"){
     currentSponsorTab = saved;
-    goTo("sponsor-page");
-    if(allMembers.length) renderSponsorList(); else loadSponsorFromAPI();
   } else {
-    goTo("gender-gate");
+    // No gender saved - go to list page first which will show gate
+    goToList();
+    return;
   }
+  goTo("sponsor-page");
+  if(allMembers.length) renderSponsorList(); else loadSponsorFromAPI();
 }
 
 function formatPhone(raw){if(!raw)return"—";const t=raw.trim();if(t.startsWith("+")||t.toLowerCase().includes("whatsapp"))return t;const d=t.replace(/\D/g,"");if(d.length===10)return`(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;if(d.length===11&&d[0]==="1")return`(${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;return t;}
@@ -565,7 +582,20 @@ autoFormat(document.getElementById("editPhone"));
 
 let allMembers=[],currentTab="male";
 async function loadMembers(){
-  buildListTab();
+  const saved = localStorage.getItem("tuf_gender");
+  const gate = document.getElementById("inlineGate");
+  const content = document.getElementById("listContent");
+  if(saved === "male" || saved === "female"){
+    if(gate) gate.style.display = "none";
+    if(content) content.style.display = "block";
+    currentTab = saved;
+    currentSponsorTab = saved;
+    buildListTab();
+  } else {
+    if(gate) gate.style.display = "block";
+    if(content) content.style.display = "none";
+    return; // Don't fetch data, just show gate
+  }
   loadAnnouncement();
   try{
     const r=await fetch("/api/members");
