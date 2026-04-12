@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TUF Phone List</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #faf7f2;
+      --warm-white: #fff9f2;
+      --brown: #5c3d2e;
+      --brown-light: #8b6355;
+      --gold: #c9973a;
+      --gold-light: #e8c07a;
+      --text: #2d1f17;
+      --text-muted: #7a5c50;
+      --border: #ddd0c4;
+    }
+
+    body {
+      background: var(--cream);
+      color: var(--text);
+      font-family: 'Source Sans 3', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .logo-line {
+      width: 60px;
+      height: 2px;
+      background: var(--gold);
+      margin: 0 auto 1.2rem;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      color: var(--brown);
+      margin-bottom: 0.3rem;
+    }
+
+    .sober-total {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-top: 0.4rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 8px 20px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--warm-white);
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 400;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab:hover { border-color: var(--gold-light); color: var(--brown); }
+    .tab.active { background: var(--brown); border-color: var(--brown); color: #fff; }
+
+    .section-sober {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 1rem;
+      padding-left: 2px;
+    }
+
+    .table-wrap {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 16px rgba(92,61,46,0.06);
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead { background: #f5ede4; }
+
+    th {
+      padding: 10px 16px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-align: left;
+    }
+
+    td {
+      padding: 12px 16px;
+      font-size: 0.92rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fef9f2; }
+
+    .name-cell { font-weight: 500; color: var(--brown); }
+
+    .empty {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .add-link {
+      display: inline-block;
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: var(--gold);
+      text-decoration: none;
+      border-bottom: 1px solid var(--gold-light);
+      padding-bottom: 1px;
+      transition: color 0.2s;
+    }
+    .add-link:hover { color: var(--brown); border-color: var(--brown); }
+
+    .print-btn {
+      float: right;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-family: inherit;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+    }
+    .print-btn:hover { border-color: var(--gold); color: var(--brown); }
+
+    .loading { text-align: center; padding: 3rem; color: var(--text-muted); }
+
+    @media (max-width: 600px) {
+      th:nth-child(3), td:nth-child(3),
+      th:nth-child(4), td:nth-child(4) { display: none; }
+    }
+
+    @media print {
+      body { background: white; padding: 0; }
+      body::before { display: none; }
+      .tabs, .print-btn, .add-link { display: none; }
+      .table-wrap { box-shadow: none; border: 1px solid #ccc; }
+      h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-line"></div>
+      <h1>TUF Phone List</h1>
+      <p class="sober-total" id="soberTotal">Loading...</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('male', this)">Men</button>
+      <button class="tab" onclick="showTab('female', this)">Women</button>
+      <button class="tab" onclick="showTab('nonbinary', this)">Nonbinary</button>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">⎙ Print</button>
+
+    <p class="section-sober" id="sectionSober"></p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Sobriety Date</th>
+            <th>Willing to Sponsor</th>
+          </tr>
+        </thead>
+        <tbody id="listBody">
+          <tr><td colspan="4" class="loading">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <br style="clear:both" />
+    <a href="/index.html" class="add-link">+ Add yourself to the list</a>
+  </div>
+
+  <script>
+    let allMembers = [];
+    let currentTab = 'male';
+
+    async function loadMembers() {
+      try {
+        const res = await fetch('/api/members');
+        allMembers = await res.json();
+        updateSoberTotal();
+        renderList();
+      } catch (e) {
+        document.getElementById('listBody').innerHTML = '<tr><td colspan="4" class="empty">Unable to load list. Please try again later.</td></tr>';
+      }
+    }
+
+    function soberYearsDays(members) {
+      let totalDays = 0;
+      const today = new Date();
+      members.forEach(m => {
+        if (m.sobriety_date) {
+          const d = new Date(m.sobriety_date + 'T00:00:00');
+          const diff = Math.floor((today - d) / (1000 * 60 * 60 * 24));
+          if (diff > 0) totalDays += diff;
+        }
+      });
+      const years = Math.floor(totalDays / 365);
+      const days = totalDays % 365;
+      return `${years} Years, ${days} Days`;
+    }
+
+    function updateSoberTotal() {
+      document.getElementById('soberTotal').textContent =
+        `Combined Sober Time: ${soberYearsDays(allMembers)}`;
+    }
+
+    function showTab(tab, btn) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderList();
+    }
+
+    function sponsorDisplay(m) {
+      const parts = [m.sponsor_dropdown, m.sponsor_other].filter(Boolean);
+      return parts.join(', ') || '—';
+    }
+
+    function formatDate(d) {
+      if (!d) return '—';
+      const [y, mo, day] = d.split('-');
+      return `${parseInt(mo)}/${parseInt(day)}/${y.slice(2)}`;
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function renderList() {
+      const members = allMembers.filter(m => m.gender === currentTab);
+      const sober = soberYearsDays(members);
+      const labels = { male: "Men's", female: "Women's", nonbinary: 'Nonbinary' };
+      document.getElementById('sectionSober').textContent =
+        `${labels[currentTab]} List — ${members.length} members — ${sober} combined sober time`;
+
+      if (!members.length) {
+        document.getElementById('listBody').innerHTML =
+          '<tr><td colspan="4" class="empty">No members on this list yet.</td></tr>';
+        return;
+      }
+
+      document.getElementById('listBody').innerHTML = members.map(m => `
+        <tr>
+          <td class="name-cell">${esc(m.name)}</td>
+          <td>${esc(m.phone)}</td>
+          <td>${formatDate(m.sobriety_date)}</td>
+          <td>${esc(sponsorDisplay(m))}</td>
+        </tr>
+      `).join('');
+    }
+
+    loadMembers();
+  </script>
+</body>
+</html>
