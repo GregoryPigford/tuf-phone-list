@@ -307,12 +307,11 @@
       <button class="gate-btn gate-btn-women" onclick="chooseGender('female')">Women's List</button>
     </div>
     <p style="margin-top:1.5rem;font-size:.75rem;color:var(--text-m);line-height:1.6;max-width:340px;font-style:italic">* We recognize that gender exists beyond these two categories. We list Men's and Women's to match our meeting's existing structure — all are welcome regardless of how you identify.</p>
-    <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)">
-      <button onclick="resetGenderChoice()" style="background:none;border:1px solid var(--border);border-radius:6px;font-size:.75rem;color:var(--text-s);cursor:pointer;padding:6px 14px;font-family:inherit">
-        ↺ I picked the wrong list
-      </button>
-    </div>
+
   </div>
+</div>
+<div style="text-align:center;padding:.5rem 0 1.5rem;opacity:0;animation:fadeUp .6s ease 2.1s forwards">
+  <button onclick="resetGenderChoice()" style="background:none;border:none;font-size:.65rem;color:var(--text-m);cursor:pointer;opacity:.4;padding:4px;font-family:inherit;letter-spacing:.02em">reset list preference</button>
 </div>
 
 <!-- THANK YOU -->
@@ -632,15 +631,21 @@ function firstWednesdayOfNextMonth(){
   return target.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
 }
 
-const BIZ_ANNOUNCEMENT = `Feeling a little off in your program? Sponsor nudging you about service? Want to give back and help shape the meeting?<br>Come to the next business meeting — First Wednesday of every month at 8pm on Zoom.<br><br>Next business meeting: <span class="biz-date-inline">${firstWednesdayOfNextMonth()}</span>`;
-
 async function loadAnnouncement(){
   const wrap=document.getElementById("homeAnnounceWrap");
   const list=document.getElementById("homeAnnounceList");
   if(!wrap||!list) return;
 
-  // Always show business meeting as pinned first item
-  let itemsHTML = `<div class="announce-item announce-item-pinned">📅 ${BIZ_ANNOUNCEMENT}</div>`;
+  // Pinned business meeting with big date styling
+  const bizDate = firstWednesdayOfNextMonth();
+  let itemsHTML = `<div class="announce-item announce-item-pinned">
+    <div class="biz-label-sm">📅 Business Meeting</div>
+    <div class="biz-body">Feeling a little off in your program? Sponsor nudging you about service? Want to give back and help shape the meeting?<br>Come to the next business meeting.<br>First Wednesday of every month at 8pm on Zoom.</div>
+    <div class="biz-date-row">
+      <span class="biz-date-label-sm">Next business meeting:</span>
+      <span class="biz-date-big">${bizDate}</span>
+    </div>
+  </div>`;
 
   // Then load admin announcements
   try{
