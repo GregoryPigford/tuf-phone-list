@@ -1040,8 +1040,22 @@ async function handleSubmit(){
 }
 
 // ── PIN VERIFICATION ──
-function showPinCard(id, name, mode){
+async function showPinCard(id, name, mode){
   if(mode==="update"){
+    // First check if this member has a PIN set
+    try{
+      const res=await fetch(`/api/member?id=${id}`,{
+        method:"PUT",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer PUBLIC_UPDATE"},
+        body:JSON.stringify({_pinCheck:true,pin:"0000"})
+      });
+      if(res.status===428){
+        // No PIN — skip straight to grandfather setup
+        showNoPinFlow(id, "0000");
+        return;
+      }
+    }catch(e){}
+    // Has a PIN — show PIN entry card
     const pc=document.getElementById("pinCard");
     document.getElementById("pinMemberId").value=id;
     document.getElementById("pinCardTitle").textContent=`Edit: ${name}`;
@@ -1081,7 +1095,7 @@ async function verifyAndEdit(){
     }
     if(testRes.status===428){
       // 428 = no PIN set — show grandfather flow
-      showNoPinFlow(id, pin);
+      showNoPinFlow(id);
       return;
     }
     // PIN good — open edit form
@@ -1096,8 +1110,7 @@ async function verifyAndEdit(){
   finally{btn.disabled=false;btn.textContent="Verify & Edit";}
 }
 
-function showNoPinFlow(id, attemptedPin){
-  // Member has no PIN — show grandfather setup flow
+function showNoPinFlow(id){
   document.getElementById("pinCard").style.display="none";
   const gf=document.getElementById("grandfatherCard");
   document.getElementById("gfMemberId").value=id;
