@@ -281,9 +281,9 @@
       </button>
     </div>
   </div>
-  <div class="announce-bar" id="homeAnnounceBar">
-    <div class="announce-wrap" id="homeAnnounceWrap">
-      <div class="announce-header">📢 Announcements</div>
+  <div style="max-width:1200px;margin:1.25rem auto 0;padding:0 2.5rem;opacity:0;animation:fadeUp .6s ease 1.62s forwards" id="homeAnnounceBar">
+    <div id="homeAnnounceWrap" style="background:linear-gradient(135deg,#1a3a1a,#0f2a0f);border:1px solid rgba(134,239,172,.25);border-radius:1.5rem;padding:1.4rem 1.6rem;color:white">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#86efac;margin-bottom:.75rem">📢 Announcements</div>
       <div id="homeAnnounceList"></div>
     </div>
   </div>
@@ -636,16 +636,16 @@ async function loadAnnouncement(){
   const list=document.getElementById("homeAnnounceList");
   if(!wrap||!list) return;
 
-  // Pinned business meeting with big date styling
   const bizDate = firstWednesdayOfNextMonth();
-  let itemsHTML = `<div class="announce-item announce-item-pinned">
-    <div class="biz-label-sm">📅 Business Meeting</div>
-    <div class="biz-body">Feeling a little off in your program? Sponsor nudging you about service? Want to give back and help shape the meeting?<br>Come to the next business meeting.<br>First Wednesday of every month at 8pm on Zoom.</div>
-    <div class="biz-date-row">
-      <span class="biz-date-label-sm">Next business meeting:</span>
-      <span class="biz-date-big">${bizDate}</span>
-    </div>
-  </div>`;
+  let itemsHTML = `
+    <div style="padding:.75rem 0;border-bottom:1px solid rgba(255,255,255,.15)">
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#86efac;margin-bottom:.4rem">📅 Business Meeting</div>
+      <div style="font-size:.87rem;line-height:1.75;color:rgba(255,255,255,.88);margin-bottom:.6rem">Feeling a little off in your program? Sponsor nudging you about service? Want to give back and help shape the meeting?<br>Come to the next business meeting.<br>First Wednesday of every month at 8pm on Zoom.</div>
+      <div style="display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap">
+        <span style="font-size:.82rem;color:rgba(255,255,255,.55)">Next business meeting:</span>
+        <span style="font-family:Fraunces,serif;font-size:1.5rem;font-weight:900;color:#86efac;letter-spacing:-.01em">${bizDate}</span>
+      </div>
+    </div>`;
 
   // Then load admin announcements
   try{
@@ -655,15 +655,14 @@ async function loadAnnouncement(){
       const items=data.items||[];
       items.forEach(item=>{
         if(item.text&&item.text.trim()){
-          itemsHTML+=`<div class="announce-item">${esc(item.text)}</div>`;
+          itemsHTML+=`<div style="padding:.7rem 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:.87rem;line-height:1.65;color:rgba(255,255,255,.88)">${esc(item.text)}</div>`;
         }
       });
     }
   }catch(e){}
 
   list.innerHTML=itemsHTML;
-  wrap.classList.add("has-content");
-  wrap.style.display="block";
+  /* wrap always visible - content fills it */
 }
 
 // ── FIND A SPONSOR ──
