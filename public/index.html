@@ -329,7 +329,10 @@
         <div class="hero-text">
           <h1 class="hero-title">The Unshakable Foundation</h1>
           <p class="hero-sub">Reach out. Stay connected.<br>Keep the foundation strong.</p>
-          <button class="hero-cta" onclick="switchTab('list')">📋 View Phone List</button>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap">
+            <button class="hero-cta" onclick="switchTab('list')">📋 View Phone List</button>
+            <button class="hero-cta" onclick="showSubpage('add-page')" style="background:rgba(255,255,255,.15);color:white;box-shadow:none;border:1px solid rgba(255,255,255,.3)">＋ Add My Info</button>
+          </div>
         </div>
       </div>
       <div class="memorial">
