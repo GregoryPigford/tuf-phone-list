@@ -567,7 +567,20 @@ autoFormat(document.getElementById("fphone"));
 autoFormat(document.getElementById("editPhone"));
 
 let allMembers=[],currentTab="male";
-async function loadMembers(){buildListTab();loadAnnouncement();try{const r=await fetch("/api/members");allMembers=await r.json();renderSoberversaries();renderStats();renderList();}catch(e){document.getElementById("memberCards").innerHTML='<p style="text-align:center;padding:2rem;color:var(--text-m)">Unable to load. Please try again.</p>';}}
+async function loadMembers(){
+  buildListTab();
+  loadAnnouncement();
+  try{
+    const r=await fetch("/api/members");
+    allMembers=await r.json();
+    try{renderSoberversaries();}catch(e){console.error("soberversaries error:",e);}
+    try{renderStats();}catch(e){console.error("stats error:",e);}
+    try{renderList();}catch(e){console.error("renderList error:",e);document.getElementById("memberCards").innerHTML=`<p style="padding:2rem;color:red">Error: ${e.message}</p>`;}
+  }catch(e){
+    console.error("fetch error:",e);
+    document.getElementById("memberCards").innerHTML='<p style="text-align:center;padding:2rem;color:var(--text-m)">Unable to load. Please try again.</p>';
+  }
+}
 
 function renderSoberversaries(){
   const today=new Date(),thisMonth=today.getMonth();
@@ -600,16 +613,27 @@ function renderStats(){
 function switchTab(tab){currentTab=tab;renderStats();renderList();}
 
 function renderList(){
-  const members=displayMembers();
-  const seen=new Set();
-  const unique=members.filter(m=>{if(seen.has(m.name))return false;seen.add(m.name);return true;});
-  if(!unique.length){document.getElementById("memberCards").innerHTML='<p style="text-align:center;padding:3rem;color:var(--text-m);font-style:italic">No members on this list yet.</p>';document.getElementById("listBody").innerHTML='<tr><td colspan="4" class="empty-cell">No members on this list yet.</td></tr>';return;}
-  document.getElementById("memberCards").innerHTML=unique.map(m=>{
-    const ph=formatPhone(m.phone);
-    const callable=!m.phone.toLowerCase().includes("whatsapp")&&!m.phone.trim().startsWith("+");
-    return`<div class="member-card"><div class="member-name">${esc(m.name)}</div>${callable?`<a class="member-phone" href="tel:${m.phone.replace(/\D/g,"")}">${esc(ph)}</a>`:`<span class="member-phone" style="cursor:default">${esc(ph)}</span>`}<div class="member-badges">${m.sobriety_date?`<span class="badge badge-date">Sober ${fmtDate(m.sobriety_date)}</span>`:""} ${sponsorStr(m)!=="—"?`<span class="badge badge-sponsor">Sponsor: ${esc(sponsorStr(m))}</span>`:""}</div></div>`;
-  }).join("");
-  document.getElementById("listBody").innerHTML=unique.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td>${formatPhone(m.phone)}</td><td>${fmtDate(m.sobriety_date)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
+  try{
+    const members=displayMembers();
+    const seen=new Set();
+    const unique=members.filter(m=>{if(seen.has(m.name))return false;seen.add(m.name);return true;});
+    if(!unique.length){
+      document.getElementById("memberCards").innerHTML='<p style="text-align:center;padding:3rem;color:var(--text-m);font-style:italic">No members on this list yet.</p>';
+      document.getElementById("listBody").innerHTML='<tr><td colspan="4" class="empty-cell">No members on this list yet.</td></tr>';
+      return;
+    }
+    document.getElementById("memberCards").innerHTML=unique.map(m=>{
+      const ph=formatPhone(m.phone);
+      const p=m.phone||"";
+      const callable=p&&!p.toLowerCase().includes("whatsapp")&&!p.trim().startsWith("+");
+      const digits=p.replace(/\D/g,"");
+      return`<div class="member-card"><div class="member-name">${esc(m.name)}</div>${callable?`<a class="member-phone" href="tel:${digits}">${esc(ph)}</a>`:`<span class="member-phone" style="cursor:default">${esc(ph)}</span>`}<div class="member-badges">${m.sobriety_date?`<span class="badge badge-date">Sober ${fmtDate(m.sobriety_date)}</span>`:""} ${sponsorStr(m)!=="—"?`<span class="badge badge-sponsor">Sponsor: ${esc(sponsorStr(m))}</span>`:""}</div></div>`;
+    }).join("");
+    document.getElementById("listBody").innerHTML=unique.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td>${formatPhone(m.phone)}</td><td>${fmtDate(m.sobriety_date)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
+  }catch(e){
+    console.error("renderList error:",e);
+    document.getElementById("memberCards").innerHTML=`<p style="text-align:center;padding:2rem;color:red">Render error: ${e.message}</p>`;
+  }
 }
 
 function sponsorStr(m){const d=m.sponsor_dropdown||"";if(d==="Other"||d==="other")return m.sponsor_other||"—";return[d,m.sponsor_other].filter(v=>v&&v.trim()).join(", ")||"—";}
