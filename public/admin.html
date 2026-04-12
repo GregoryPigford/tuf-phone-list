@@ -360,17 +360,22 @@
 
     <!-- ANNOUNCEMENTS EDITOR -->
     <div style="background:#fff9f2;border:1px solid #ddd0c4;border-radius:10px;padding:1.2rem 1.5rem;margin-bottom:1.25rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
-        <div>
-          <div style="font-family:'Playfair Display',serif;font-size:1rem;color:#5c3d2e;font-weight:600">📢 Announcement</div>
-          <div style="font-size:.75rem;color:#9a8a7a;margin-top:2px">Shown on the home screen and phone list. Leave blank to hide.</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button onclick="saveAnnouncement()" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-family:inherit;font-size:.85rem;cursor:pointer">Save</button>
-          <button onclick="clearAnnouncement()" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:7px 12px;font-family:inherit;font-size:.85rem;color:#9a8a7a;cursor:pointer">Clear</button>
-        </div>
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;color:#5c3d2e;font-weight:600;margin-bottom:.3rem">📢 Announcements</div>
+      <div style="font-size:.75rem;color:#9a8a7a;margin-bottom:1rem">Shown on the home screen. The business meeting notice is always pinned at the top automatically.</div>
+
+      <!-- Pinned business meeting (read-only display) -->
+      <div style="background:#f0f7f0;border:1px solid #b8d9b8;border-radius:7px;padding:.8rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#2d5a2d">
+        📌 <strong>Pinned:</strong> Business meeting announcement (auto-generated, always shown)
       </div>
-      <textarea id="announcementText" placeholder="Type an announcement... (e.g. Meeting moved to Fellowship Hall this Sunday)" style="width:100%;height:80px;padding:10px 12px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.9rem;resize:vertical;background:#faf7f2"></textarea>
+
+      <!-- Existing announcements list -->
+      <div id="adminAnnounceList" style="margin-bottom:1rem"></div>
+
+      <!-- Add new -->
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="announcementText" placeholder="Add an announcement... (e.g. Meeting moved to Fellowship Hall this Sunday)" style="flex:1;height:72px;padding:9px 12px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;background:#faf7f2"></textarea>
+        <button onclick="addAnnouncement()" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:9px 16px;font-family:inherit;font-size:.85rem;cursor:pointer;white-space:nowrap;height:72px">Add</button>
+      </div>
       <div id="announceMsg" style="font-size:.82rem;margin-top:.5rem;display:none"></div>
     </div>
 
@@ -634,13 +639,28 @@
     try {
       const res = await fetch('/api/announcement');
       const data = await res.json();
-      document.getElementById('announcementText').value = data.text || '';
+      renderAdminAnnouncements(data.items || []);
     } catch(e) {}
   }
 
-  async function saveAnnouncement() {
-    const text = document.getElementById('announcementText').value;
+  function renderAdminAnnouncements(items) {
+    const list = document.getElementById('adminAnnounceList');
+    if (!list) return;
+    if (!items.length) {
+      list.innerHTML = '<p style="font-size:.82rem;color:#9a8a7a;font-style:italic;margin-bottom:.5rem">No additional announcements.</p>';
+      return;
+    }
+    list.innerHTML = items.map(item => `
+      <div style="display:flex;align-items:center;gap:8px;background:#faf7f2;border:1px solid #ddd0c4;border-radius:7px;padding:.65rem 1rem;margin-bottom:.5rem">
+        <span style="flex:1;font-size:.85rem;color:#2d1f17">${esc(item.text)}</span>
+        <button onclick="deleteAnnouncement('${item.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+      </div>`).join('');
+  }
+
+  async function addAnnouncement() {
+    const text = document.getElementById('announcementText').value.trim();
     const msg = document.getElementById('announceMsg');
+    if (!text) { showAdminMsg('Please enter announcement text.', false); return; }
     try {
       const res = await fetch('/api/announcement', {
         method: 'POST',
@@ -648,20 +668,31 @@
         body: JSON.stringify({ text })
       });
       if (!res.ok) throw new Error('Failed');
-      msg.textContent = text.trim() ? 'Announcement saved and live.' : 'Announcement cleared.';
-      msg.style.color = '#4a7c59';
-      msg.style.display = 'block';
-      setTimeout(() => msg.style.display = 'none', 3000);
-    } catch(e) {
-      msg.textContent = 'Save failed.';
-      msg.style.color = '#8b3a3a';
-      msg.style.display = 'block';
-    }
+      document.getElementById('announcementText').value = '';
+      showAdminMsg('Announcement added!', true);
+      loadAnnouncementAdmin();
+    } catch(e) { showAdminMsg('Save failed.', false); }
   }
 
-  function clearAnnouncement() {
-    document.getElementById('announcementText').value = '';
-    saveAnnouncement();
+  async function deleteAnnouncement(id) {
+    if (!confirm('Remove this announcement?')) return;
+    try {
+      const res = await fetch(`/api/announcement?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed');
+      showAdminMsg('Removed.', true);
+      loadAnnouncementAdmin();
+    } catch(e) { showAdminMsg('Delete failed.', false); }
+  }
+
+  function showAdminMsg(text, success) {
+    const msg = document.getElementById('announceMsg');
+    msg.textContent = text;
+    msg.style.color = success ? '#4a7c59' : '#8b3a3a';
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 3000);
   }
 
   loadAnnouncementAdmin();

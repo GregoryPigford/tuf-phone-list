@@ -69,16 +69,6 @@
     .home-footer-text{font-size:.78rem;color:var(--text-m)}
     .home-footer-month{font-size:.78rem;font-weight:600;color:var(--navy)}
 
-    /* ── BUSINESS MEETING BANNER ── */
-    .biz-banner{max-width:1200px;margin:1.25rem auto 0;padding:0 2.5rem;opacity:0;animation:fadeUp .6s ease 1.62s forwards}
-    @media(max-width:820px){.biz-banner{padding:0 1rem}}
-    .biz-card{background:linear-gradient(135deg,#1a3a1a,#0f2a0f);border:1px solid rgba(134,239,172,.25);border-radius:var(--radius);padding:1.2rem 1.5rem;color:white}
-    .biz-label{font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#86efac;margin-bottom:.6rem}
-    .biz-text{font-size:.88rem;line-height:1.7;color:rgba(255,255,255,.85);margin-bottom:.75rem}
-    .biz-date-row{display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap}
-    .biz-date-label{font-size:.82rem;color:rgba(255,255,255,.6)}
-    .biz-date{font-family:"Fraunces",serif;font-size:1.5rem;font-weight:900;color:#86efac;letter-spacing:-.01em}
-
     /* ── ANNOUNCEMENTS ── */
     .announce-bar{max-width:1200px;margin:1.25rem auto 0;padding:0 2.5rem;opacity:0;animation:fadeUp .6s ease 1.65s forwards}
     @media(max-width:820px){.announce-bar{padding:0 1rem}}
@@ -291,21 +281,10 @@
       </button>
     </div>
   </div>
-  <div class="biz-banner">
-    <div class="biz-card">
-      <div class="biz-label">📅 Business Meeting</div>
-      <div class="biz-text">Feeling a little off in your program? Sponsor nudging you about service? Want to give back and help shape the meeting?<br>Come to the next business meeting.<br>First Wednesday of every month at 8pm on Zoom.</div>
-      <div class="biz-date-row">
-        <span class="biz-date-label">Next business meeting:</span>
-        <span class="biz-date" id="nextBizDate"></span>
-      </div>
-    </div>
-  </div>
-
   <div class="announce-bar" id="homeAnnounceBar">
-    <div class="announce-card" id="homeAnnounceCard">
-      <div class="announce-label">📢 Announcement</div>
-      <div class="announce-text" id="homeAnnounceText"></div>
+    <div class="announce-wrap" id="homeAnnounceWrap">
+      <div class="announce-header">📢 Announcements</div>
+      <div id="homeAnnounceList"></div>
     </div>
   </div>
 
@@ -327,7 +306,12 @@
       <button class="gate-btn gate-btn-men" onclick="chooseGender('male')">Men's List</button>
       <button class="gate-btn gate-btn-women" onclick="chooseGender('female')">Women's List</button>
     </div>
-    <p class="gate-note">You can switch lists any time from the phone list screen.</p>
+    <p style="margin-top:1.5rem;font-size:.75rem;color:var(--text-m);line-height:1.6;max-width:340px;font-style:italic">* We recognize that gender exists beyond these two categories. We list Men's and Women's to match our meeting's existing structure — all are welcome regardless of how you identify.</p>
+    <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border)">
+      <button onclick="resetGenderChoice()" style="background:none;border:1px solid var(--border);border-radius:6px;font-size:.75rem;color:var(--text-s);cursor:pointer;padding:6px 14px;font-family:inherit">
+        ↺ I picked the wrong list
+      </button>
+    </div>
   </div>
 </div>
 
@@ -448,25 +432,9 @@
   <div class="page-header">
     <img class="header-logo" id="listLogo" alt="TUF" onclick="goTo('home')" />
     <div class="header-text"><h2 id="listHeading">Phone List</h2><p id="listSub">Loading...</p></div>
-    <div style="display:flex;gap:8px;flex-shrink:0">
-      <button class="back-btn" onclick="showGenderGate()" title="Switch list">⇄ Switch</button>
-      <button class="back-btn" onclick="goTo('home')">← Home</button>
-    </div>
+    <button class="back-btn" onclick="goTo('home')">← Home</button>
   </div>
   <div class="inner">
-    <a class="reflection-link" href="https://www.aa.org/daily-reflections" target="_blank" rel="noopener">📖&nbsp; Today's Daily Reflection</a>
-    <div class="biz-card" style="margin-bottom:1rem;background:linear-gradient(135deg,#1a3a1a,#0f2a0f);border:1px solid rgba(134,239,172,.25);border-radius:var(--radius);padding:1rem 1.25rem;color:white">
-      <div style="font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#86efac;margin-bottom:.5rem">📅 Business Meeting</div>
-      <div style="font-size:.82rem;line-height:1.65;color:rgba(255,255,255,.82);margin-bottom:.6rem">Feeling a little off in your program? Sponsor nudging you about service? Want to give back and help shape the meeting?<br>Come to the next business meeting.<br>First Wednesday of every month at 8pm on Zoom.</div>
-      <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap">
-        <span style="font-size:.8rem;color:rgba(255,255,255,.55)">Next business meeting:</span>
-        <span id="nextBizDateList" style="font-family:Fraunces,serif;font-size:1.35rem;font-weight:900;color:#86efac"></span>
-      </div>
-    </div>
-    <div class="announce-card" id="listAnnounceCard" style="margin-bottom:1rem;display:none">
-      <div class="announce-label">📢 Announcement</div>
-      <div class="announce-text" id="listAnnounceText"></div>
-    </div>
     <div id="soberBlock"></div>
     <div class="stats-row">
       <div class="stat"><div class="stat-label">Members</div><div class="stat-value" id="statCount">—</div></div>
@@ -511,7 +479,17 @@ const TRANS=[
 ];
 function rAF(fn){requestAnimationFrame(fn);}
 function hideWipe(w){w.style.transition="opacity .25s ease";w.style.opacity="0";setTimeout(()=>{w.style.pointerEvents="none";w.style.clipPath="none";w.style.transform="none";},260);}
-function goTo(id){const w=document.getElementById("wipe");TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);hideWipe(w);});}
+function goTo(id){const w=document.getElementById("wipe");TRANS[Math.floor(Math.random()*TRANS.length)](w,()=>{document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");window.scrollTo(0,0);hideWipe(w);if(id==="form-page") preCheckGender();});}
+
+function preCheckGender(){
+  const saved=localStorage.getItem("tuf_gender");
+  if(!saved) return;
+  const radio=document.querySelector(`input[name='gender'][value='${saved}']`);
+  if(radio){
+    radio.checked=true;
+    radio.closest(".gender-opt").classList.add("selected");
+  }
+}
 function buildListTab() {
   const saved = localStorage.getItem("tuf_gender") || currentTab;
   const label = saved === "male" ? "Men's List" : "Women's List";
@@ -529,6 +507,19 @@ function goToList(){
   } else {
     goTo("gender-gate");
   }
+}
+
+function resetGenderChoice(){
+  localStorage.removeItem("tuf_gender");
+  // Reload gate with fresh animations
+  const gate = document.getElementById("gender-gate");
+  const inner = gate.querySelector(".gate-inner");
+  const clone = inner.cloneNode(true);
+  // Re-attach button events after clone
+  inner.parentNode.replaceChild(clone, inner);
+  // Re-bind reset button
+  clone.querySelector("button[onclick]").onclick = resetGenderChoice;
+  goTo("gender-gate");
 }
 
 function chooseGender(gender){
@@ -633,26 +624,41 @@ async function confirmRemove(){const btn=document.getElementById("confirmRemoveB
 
 
 // ── ANNOUNCEMENTS ──
+function firstWednesdayOfNextMonth(){
+  const now=new Date();
+  const thisMonth=new Date(now.getFullYear(),now.getMonth(),1);
+  while(thisMonth.getDay()!==3) thisMonth.setDate(thisMonth.getDate()+1);
+  const target=thisMonth>now?thisMonth:(()=>{const nm=new Date(now.getFullYear(),now.getMonth()+1,1);while(nm.getDay()!==3)nm.setDate(nm.getDate()+1);return nm;})();
+  return target.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+}
+
+const BIZ_ANNOUNCEMENT = `Feeling a little off in your program? Sponsor nudging you about service? Want to give back and help shape the meeting?<br>Come to the next business meeting — First Wednesday of every month at 8pm on Zoom.<br><br>Next business meeting: <span class="biz-date-inline">${firstWednesdayOfNextMonth()}</span>`;
+
 async function loadAnnouncement(){
+  const wrap=document.getElementById("homeAnnounceWrap");
+  const list=document.getElementById("homeAnnounceList");
+  if(!wrap||!list) return;
+
+  // Always show business meeting as pinned first item
+  let itemsHTML = `<div class="announce-item announce-item-pinned">📅 ${BIZ_ANNOUNCEMENT}</div>`;
+
+  // Then load admin announcements
   try{
-    const res = await fetch("/api/announcement");
-    if(!res.ok) return;
-    const data = await res.json();
-    const text = data.text || "";
-    ["homeAnnounceCard","listAnnounceCard"].forEach(id=>{
-      const el = document.getElementById(id);
-      if(!el) return;
-      if(text.trim()){
-        el.style.display="block";
-        el.classList.add("has-content");
-        const txt = el.querySelector(".announce-text");
-        if(txt) txt.textContent = text;
-      } else {
-        el.style.display="none";
-        el.classList.remove("has-content");
-      }
-    });
+    const res=await fetch("/api/announcement");
+    if(res.ok){
+      const data=await res.json();
+      const items=data.items||[];
+      items.forEach(item=>{
+        if(item.text&&item.text.trim()){
+          itemsHTML+=`<div class="announce-item">${esc(item.text)}</div>`;
+        }
+      });
+    }
   }catch(e){}
+
+  list.innerHTML=itemsHTML;
+  wrap.classList.add("has-content");
+  wrap.style.display="block";
 }
 
 // ── FIND A SPONSOR ──
@@ -738,32 +744,8 @@ const _origGoTo = goTo;
 function showMsg(id,text,type){const el=document.getElementById(id);el.textContent=text;el.className="msg "+type;}
 
 
-// ── BUSINESS MEETING DATE ──
-function firstWednesdayOfNextMonth() {
-  const now = new Date();
-  // First find this month's first Wednesday
-  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  while (thisMonth.getDay() !== 3) thisMonth.setDate(thisMonth.getDate() + 1);
-  // If it hasn't happened yet today, show it; otherwise show next month's
-  const target = thisMonth > now ? thisMonth : (() => {
-    const nm = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    while (nm.getDay() !== 3) nm.setDate(nm.getDate() + 1);
-    return nm;
-  })();
-  return target.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric", year:"numeric" });
-}
-
-function setBizDates() {
-  const d = firstWednesdayOfNextMonth();
-  ["nextBizDate","nextBizDateList"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = d;
-  });
-}
-setBizDates();
-
 loadAnnouncement();
-document.getElementById("monthNote").textContent=new Date().toLocaleString("default",{month:"long"})+" soberversaries shown on the list";
+document.getElementById("monthNote").textContent=new Date().toLocaleString("default",{month:"long"})+" soberversaries shown on the phone lists";
 if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js");
 </script>
 </body>
