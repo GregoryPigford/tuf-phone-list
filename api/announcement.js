@@ -11,41 +11,31 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // GET — public, returns all non-pinned announcements
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('announcements')
-      .select('id, text, created_at')
+      .select('id, title, text, created_at')
       .eq('pinned', false)
       .order('created_at', { ascending: true });
     if (error) return res.status(200).json({ items: [] });
     return res.status(200).json({ items: data || [] });
   }
 
-  // Auth required for write operations
   const auth = req.headers.authorization;
   if (auth !== `Bearer ${process.env.ADMIN_PASSWORD}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  // POST — add new announcement
   if (req.method === 'POST') {
-    const { text } = req.body;
-    if (!text || !text.trim()) {
-      return res.status(400).json({ error: 'Text required' });
-    }
-    const { data, error } = await supabase
+    const { title, text } = req.body;
+    if (!text || !text.trim()) return res.status(400).json({ error: 'Text required' });
+    const { error } = await supabase
       .from('announcements')
-      .insert([{ text: text.trim(), pinned: false }])
-      .select();
-    if (error) {
-      console.error('Insert error:', error);
-      return res.status(500).json({ error: error.message });
-    }
-    return res.status(200).json({ success: true, item: data[0] });
+      .insert([{ title: title?.trim() || null, text: text.trim(), pinned: false }]);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true });
   }
 
-  // DELETE — remove an announcement (can't delete pinned)
   if (req.method === 'DELETE') {
     const { id } = req.query;
     if (!id) return res.status(400).json({ error: 'ID required' });
@@ -54,10 +44,7 @@ export default async function handler(req, res) {
       .delete()
       .eq('id', id)
       .eq('pinned', false);
-    if (error) {
-      console.error('Delete error:', error);
-      return res.status(500).json({ error: error.message });
-    }
+    if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ success: true });
   }
 
