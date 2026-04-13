@@ -1,11 +1,12 @@
 {
-  "functions": {
-    "api/*.js": {
-      "memory": 128,
-      "maxDuration": 10
-    }
-  },
+  "outputDirectory": "public",
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/public/$1" }
+    { "source": "/((?!api/).*)", "destination": "/$1" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-expiry",
+      "schedule": "0 10 * * *"
+    }
   ]
 }
