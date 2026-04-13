@@ -7,7 +7,7 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -28,10 +28,21 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const { title, text } = req.body;
-    if (!text || !text.trim()) return res.status(400).json({ error: 'Text required' });
-    const { error } = await supabase
-      .from('announcements')
-      .insert([{ title: title?.trim() || null, text: text.trim(), pinned: false }]);
+    if (!text?.trim()) return res.status(400).json({ error: 'Text required' });
+    const { error } = await supabase.from('announcements')
+      .insert([{ title: title?.trim()||null, text: text.trim(), pinned: false }]);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true });
+  }
+
+  if (req.method === 'PUT') {
+    const { id } = req.query;
+    if (!id) return res.status(400).json({ error: 'ID required' });
+    const { title, text } = req.body;
+    if (!text?.trim()) return res.status(400).json({ error: 'Text required' });
+    const { error } = await supabase.from('announcements')
+      .update({ title: title?.trim()||null, text: text.trim() })
+      .eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ success: true });
   }
@@ -39,11 +50,8 @@ export default async function handler(req, res) {
   if (req.method === 'DELETE') {
     const { id } = req.query;
     if (!id) return res.status(400).json({ error: 'ID required' });
-    const { error } = await supabase
-      .from('announcements')
-      .delete()
-      .eq('id', id)
-      .eq('pinned', false);
+    const { error } = await supabase.from('announcements')
+      .delete().eq('id', id).eq('pinned', false);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ success: true });
   }
