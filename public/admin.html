@@ -427,6 +427,21 @@
       </div>
     </div>
 
+
+    <!-- EXPIRY SECTION -->
+    <div style="background:#fff9f2;border:1px solid #ddd0c4;border-radius:10px;padding:1.2rem 1.5rem;margin-bottom:1.25rem">
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;color:#5c3d2e;font-weight:600;margin-bottom:.3rem">⏰ Listing Expiry</div>
+      <div style="font-size:.75rem;color:#9a8a7a;margin-bottom:1rem">Members expire 180 days after joining or last renewal. Warning emails sent at 150 days.</div>
+
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem">
+        <div id="expiryStats" style="flex:1;min-width:200px;background:#f5f0ea;border-radius:8px;padding:.75rem 1rem;font-size:.82rem;color:#5c3d2e">Loading...</div>
+        <button onclick="runExpiryCheck()" style="height:40px;padding:0 16px;background:#5c3d2e;color:white;border:none;border-radius:6px;font-family:inherit;font-size:.82rem;cursor:pointer;white-space:nowrap">Run Check Now</button>
+      </div>
+
+      <div id="expiryWarnList" style="margin-bottom:.75rem"></div>
+      <div id="expiryExpiredList"></div>
+    </div>
+
     <div class="stats-bar" id="statsBar">
       <div class="stat"><div class="stat-label">Total Members</div><div class="stat-value" id="statTotal">—</div></div>
       <div class="stat"><div class="stat-label">Men</div><div class="stat-value" id="statMen">—</div></div>
@@ -869,7 +884,87 @@
       document.getElementById('fcOrder').value = '0';
       msg.textContent='Card added!'; msg.style.color='#4a7c59';
       setTimeout(()=>msg.style.display='none',3000);
-      loadFeatureCardsAdmin();
+    
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
+  loadFeatureCardsAdmin();
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
   }
 
@@ -906,11 +1001,219 @@
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed');
-      loadFeatureCardsAdmin();
+    
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
+  loadFeatureCardsAdmin();
     } catch(e) { alert('Delete failed.'); }
   }
 
+
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
   loadFeatureCardsAdmin();
+
+
+  function setPinModal(id, name) {
+    document.getElementById('setPinMemberId').value = id;
+    document.getElementById('setPinMemberName').textContent = 'Member: ' + name;
+    document.getElementById('setPinValue').value = '';
+    document.getElementById('setPinMsg').style.display = 'none';
+    const modal = document.getElementById('setPinModalEl');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('setPinValue').focus(), 100);
+  }
+
+  function closePinModal() {
+    document.getElementById('setPinModalEl').style.display = 'none';
+  }
+
+  async function confirmSetPin() {
+    const id = document.getElementById('setPinMemberId').value;
+    const pin = document.getElementById('setPinValue').value.trim();
+    const msg = document.getElementById('setPinMsg');
+    if (!/^\d{4}$/.test(pin)) {
+      msg.textContent = 'Please enter exactly 4 digits.';
+      msg.style.color = '#8b3a3a';
+      msg.style.display = 'block';
+      return;
+    }
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ newPin: pin })
+      });
+      if (!res.ok) throw new Error('Failed');
+      msg.textContent = '✅ PIN set successfully! Tell the member their temporary PIN: ' + pin;
+      msg.style.color = '#2d5a1e';
+      msg.style.display = 'block';
+      setTimeout(() => closePinModal(), 3000);
+    } catch(e) {
+      msg.textContent = 'Failed to set PIN.';
+      msg.style.color = '#8b3a3a';
+      msg.style.display = 'block';
+    }
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('setPinModalEl').addEventListener('click', function(e) {
+    if (e.target === this) closePinModal();
+  });
 
   loadAnnouncementAdmin();
     } catch(e) { showAdminMsg('Save failed.', false); }
@@ -1083,7 +1386,87 @@
       document.getElementById('fcOrder').value = '0';
       msg.textContent='Card added!'; msg.style.color='#4a7c59';
       setTimeout(()=>msg.style.display='none',3000);
-      loadFeatureCardsAdmin();
+    
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
+  loadFeatureCardsAdmin();
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
   }
 
@@ -1120,11 +1503,219 @@
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed');
-      loadFeatureCardsAdmin();
+    
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
+  loadFeatureCardsAdmin();
     } catch(e) { alert('Delete failed.'); }
   }
 
+
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
   loadFeatureCardsAdmin();
+
+
+  function setPinModal(id, name) {
+    document.getElementById('setPinMemberId').value = id;
+    document.getElementById('setPinMemberName').textContent = 'Member: ' + name;
+    document.getElementById('setPinValue').value = '';
+    document.getElementById('setPinMsg').style.display = 'none';
+    const modal = document.getElementById('setPinModalEl');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('setPinValue').focus(), 100);
+  }
+
+  function closePinModal() {
+    document.getElementById('setPinModalEl').style.display = 'none';
+  }
+
+  async function confirmSetPin() {
+    const id = document.getElementById('setPinMemberId').value;
+    const pin = document.getElementById('setPinValue').value.trim();
+    const msg = document.getElementById('setPinMsg');
+    if (!/^\d{4}$/.test(pin)) {
+      msg.textContent = 'Please enter exactly 4 digits.';
+      msg.style.color = '#8b3a3a';
+      msg.style.display = 'block';
+      return;
+    }
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ newPin: pin })
+      });
+      if (!res.ok) throw new Error('Failed');
+      msg.textContent = '✅ PIN set successfully! Tell the member their temporary PIN: ' + pin;
+      msg.style.color = '#2d5a1e';
+      msg.style.display = 'block';
+      setTimeout(() => closePinModal(), 3000);
+    } catch(e) {
+      msg.textContent = 'Failed to set PIN.';
+      msg.style.color = '#8b3a3a';
+      msg.style.display = 'block';
+    }
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('setPinModalEl').addEventListener('click', function(e) {
+    if (e.target === this) closePinModal();
+  });
 
   loadAnnouncementAdmin();
     } catch(e) { showAdminMsg('Delete failed.', false); }
@@ -1273,7 +1864,87 @@
       document.getElementById('fcOrder').value = '0';
       msg.textContent='Card added!'; msg.style.color='#4a7c59';
       setTimeout(()=>msg.style.display='none',3000);
-      loadFeatureCardsAdmin();
+    
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
+  loadFeatureCardsAdmin();
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
   }
 
@@ -1310,11 +1981,219 @@
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed');
-      loadFeatureCardsAdmin();
+    
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
+  loadFeatureCardsAdmin();
     } catch(e) { alert('Delete failed.'); }
   }
 
+
+  // ── EXPIRY ──
+  async function loadExpiryData() {
+    try {
+      const res = await fetch('/api/members?all=true', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const members = await res.json();
+      const now = new Date();
+      const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
+      const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+
+      const expiringSoon = members.filter(m => m.active && new Date(m.last_renewed) < day150);
+      const expired = members.filter(m => !m.active);
+
+      document.getElementById('expiryStats').innerHTML =
+        `<strong>${expiringSoon.length}</strong> expiring soon &nbsp;·&nbsp; <strong>${expired.length}</strong> expired &nbsp;·&nbsp; <strong>${members.filter(m=>m.active).length}</strong> active`;
+
+      // Expiring soon list
+      const warnEl = document.getElementById('expiryWarnList');
+      if (expiringSoon.length) {
+        const daysLeft = m => 180 - Math.floor((now - new Date(m.last_renewed)) / 86400000);
+        warnEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#92600a;margin-bottom:.4rem">⚠️ Expiring Soon</div>' +
+          expiringSoon.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fdf6e8;border:1px solid #f5d78a;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <div style="flex:1">
+                <span style="font-size:.85rem;font-weight:600;color:#2d1f17">${esc(m.name)}</span>
+                <span style="font-size:.75rem;color:#92600a;margin-left:.5rem">${daysLeft(m)} days left</span>
+                ${!m.email ? '<span style="font-size:.7rem;color:#8b3a3a;margin-left:.4rem">⚠ no email</span>' : ''}
+              </div>
+              <button onclick="adminRenew('${m.id}')" style="background:#5c3d2e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Renew</button>
+            </div>`).join('');
+      } else {
+        warnEl.innerHTML = '';
+      }
+
+      // Expired list
+      const expEl = document.getElementById('expiryExpiredList');
+      if (expired.length) {
+        expEl.innerHTML = '<div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#8b3a3a;margin-bottom:.4rem">🔴 Expired (hidden from list)</div>' +
+          expired.map(m => `
+            <div style="display:flex;align-items:center;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.4rem">
+              <span style="flex:1;font-size:.85rem;font-weight:600;color:#7f1d1d">${esc(m.name)}</span>
+              <button onclick="adminRenew('${m.id}')" style="background:#2d5a1e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:.75rem;cursor:pointer">Restore</button>
+              <button onclick="deleteMember('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #fca5a5;border-radius:5px;padding:3px 10px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+            </div>`).join('');
+      } else {
+        expEl.innerHTML = '';
+      }
+    } catch(e) {
+      document.getElementById('expiryStats').textContent = 'Could not load expiry data.';
+    }
+  }
+
+  async function adminRenew(id) {
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ last_renewed: new Date().toISOString(), expiry_warned: false, active: true })
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadExpiryData();
+      loadMembers();
+    } catch(e) { alert('Renewal failed.'); }
+  }
+
+  async function runExpiryCheck() {
+    try {
+      const res = await fetch('/api/cron-expiry', {
+        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+      });
+      const d = await res.json();
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      loadExpiryData();
+    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+  }
+
+  loadExpiryData();
+
   loadFeatureCardsAdmin();
+
+
+  function setPinModal(id, name) {
+    document.getElementById('setPinMemberId').value = id;
+    document.getElementById('setPinMemberName').textContent = 'Member: ' + name;
+    document.getElementById('setPinValue').value = '';
+    document.getElementById('setPinMsg').style.display = 'none';
+    const modal = document.getElementById('setPinModalEl');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('setPinValue').focus(), 100);
+  }
+
+  function closePinModal() {
+    document.getElementById('setPinModalEl').style.display = 'none';
+  }
+
+  async function confirmSetPin() {
+    const id = document.getElementById('setPinMemberId').value;
+    const pin = document.getElementById('setPinValue').value.trim();
+    const msg = document.getElementById('setPinMsg');
+    if (!/^\d{4}$/.test(pin)) {
+      msg.textContent = 'Please enter exactly 4 digits.';
+      msg.style.color = '#8b3a3a';
+      msg.style.display = 'block';
+      return;
+    }
+    try {
+      const res = await fetch('/api/member?id=' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ newPin: pin })
+      });
+      if (!res.ok) throw new Error('Failed');
+      msg.textContent = '✅ PIN set successfully! Tell the member their temporary PIN: ' + pin;
+      msg.style.color = '#2d5a1e';
+      msg.style.display = 'block';
+      setTimeout(() => closePinModal(), 3000);
+    } catch(e) {
+      msg.textContent = 'Failed to set PIN.';
+      msg.style.color = '#8b3a3a';
+      msg.style.display = 'block';
+    }
+  }
+
+  // Close modal on backdrop click
+  document.getElementById('setPinModalEl').addEventListener('click', function(e) {
+    if (e.target === this) closePinModal();
+  });
 
   loadAnnouncementAdmin();
 
@@ -1332,5 +2211,22 @@
       });
   }, 60000);
 </script>
+
+  <!-- SET PIN MODAL -->
+  <div id="setPinModalEl" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:1.5rem">
+    <div style="background:#fff9f2;border-radius:12px;padding:1.75rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+      <h3 style="font-family:'Playfair Display',serif;font-size:1.1rem;color:#2d1f17;margin-bottom:.25rem">Set PIN</h3>
+      <p style="font-size:.8rem;color:#7a5c50;margin-bottom:1rem" id="setPinMemberName"></p>
+      <p style="font-size:.8rem;color:#5c3d2e;background:#f5ede0;border-radius:6px;padding:.6rem .8rem;margin-bottom:1rem;line-height:1.5">This sets a temporary PIN for the member. Tell them their temporary PIN and ask them to update it themselves in the app.</p>
+      <input type="hidden" id="setPinMemberId"/>
+      <label style="font-size:.72rem;font-weight:600;color:#7a5c50;display:block;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.06em">New 4-Digit PIN</label>
+      <input type="text" id="setPinValue" maxlength="4" inputmode="numeric" placeholder="e.g. 1234" style="width:100%;padding:9px 12px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:1.1rem;letter-spacing:.2em;background:#faf7f2;margin-bottom:1rem;text-align:center"/>
+      <div style="display:flex;gap:8px">
+        <button onclick="confirmSetPin()" style="flex:1;height:40px;background:#5c3d2e;color:#fff;border:none;border-radius:6px;font-family:inherit;font-size:.88rem;cursor:pointer">Set PIN</button>
+        <button onclick="closePinModal()" style="height:40px;padding:0 16px;background:none;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.88rem;cursor:pointer;color:#7a5c50">Cancel</button>
+      </div>
+      <div id="setPinMsg" style="font-size:.8rem;margin-top:.6rem;display:none"></div>
+    </div>
+  </div>
 </body>
 </html>
