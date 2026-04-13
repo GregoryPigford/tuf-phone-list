@@ -407,7 +407,8 @@
             </div>
             <div style="flex:1;min-width:140px">
               <label style="font-size:.72rem;color:#7a5c50;display:block;margin-bottom:3px">Photo (optional)</label>
-              <input type="file" id="fcPhoto" accept="image/*" style="width:100%;padding:4px;font-size:.82rem;font-family:inherit"/>
+              <input type="file" id="fcPhoto" accept="image/jpeg,image/png,image/webp,image/gif" style="width:100%;padding:4px;font-size:.82rem;font-family:inherit"/>
+              <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Accepted: JPG, PNG, WebP, GIF · Max 5MB<br>⚠️ iPhone HEIC photos must be converted to JPG first</div>
               <div id="fcPhotoPreview" style="margin-top:5px;display:none">
                 <img id="fcPhotoImg" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #ddd0c4"/>
                 <button onclick="clearPhoto()" style="background:none;border:none;color:#8b3a3a;font-size:.75rem;cursor:pointer;margin-left:6px">✕ Remove</button>
@@ -753,6 +754,7 @@
   function clearPhoto() {
     document.getElementById('fcPhoto').value = '';
     document.getElementById('fcPhotoPreview').style.display = 'none';
+    fcPhotoBase64 = null; fcPhotoType = null; fcPhotoName = null;
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -761,9 +763,24 @@
       photoInput.addEventListener('change', function() {
         const file = this.files[0];
         if (!file) return;
+        const allowed = ['image/jpeg','image/png','image/webp','image/gif'];
+        if (!allowed.includes(file.type)) {
+          alert('Please use JPG, PNG, WebP, or GIF. HEIC files from iPhone need to be converted first.\n\nOn iPhone: Open photo → Share → Save to Files (saves as JPG)');
+          this.value = '';
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Photo must be under 5MB.');
+          this.value = '';
+          return;
+        }
+        fcPhotoName = file.name;
+        fcPhotoType = file.type;
         const reader = new FileReader();
         reader.onload = e => {
-          document.getElementById('fcPhotoImg').src = e.target.result;
+          const dataUrl = e.target.result;
+          fcPhotoBase64 = dataUrl.split(',')[1];
+          document.getElementById('fcPhotoImg').src = dataUrl;
           document.getElementById('fcPhotoPreview').style.display = 'flex';
           document.getElementById('fcPhotoPreview').style.alignItems = 'center';
         };
@@ -772,40 +789,36 @@
     }
   });
 
-  async function uploadPhoto(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async e => {
-        const base64 = e.target.result.split(',')[1];
-        try {
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ filename: file.name, contentType: file.type, data: base64 })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Upload failed');
-          resolve(data.url);
-        } catch(e) { reject(e); }
-      };
-      reader.readAsDataURL(file);
+  let fcPhotoBase64 = null;
+  let fcPhotoType = null;
+  let fcPhotoName = null;
+
+  async function uploadPhoto() {
+    if (!fcPhotoBase64) throw new Error('No photo selected');
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ filename: fcPhotoName, contentType: fcPhotoType, data: fcPhotoBase64 })
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    return data.url;
   }
 
   async function addFeatureCard() {
     const title = document.getElementById('fcTitle').value.trim();
     const body = document.getElementById('fcBody').value.trim();
     const font = document.getElementById('fcFont').value;
-    const photoFile = document.getElementById('fcPhoto').files[0];
+    // photo handled via fcPhotoBase64
     const sort_order = parseInt(document.getElementById('fcOrder').value) || 0;
     const msg = document.getElementById('fcMsg');
     if (!title) { msg.textContent='Title is required.'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
     msg.textContent='Saving...'; msg.style.color='#5c3d2e'; msg.style.display='block';
     try {
       let photo_url = null;
-      if (photoFile) {
-        msg.textContent='Uploading photo...'; 
-        photo_url = await uploadPhoto(photoFile);
+      if (fcPhotoBase64) {
+        msg.textContent='Uploading photo...';
+        photo_url = await uploadPhoto();
       }
       const res = await fetch('/api/feature-cards', {
         method: 'POST',
@@ -883,6 +896,7 @@
   function clearPhoto() {
     document.getElementById('fcPhoto').value = '';
     document.getElementById('fcPhotoPreview').style.display = 'none';
+    fcPhotoBase64 = null; fcPhotoType = null; fcPhotoName = null;
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -891,9 +905,24 @@
       photoInput.addEventListener('change', function() {
         const file = this.files[0];
         if (!file) return;
+        const allowed = ['image/jpeg','image/png','image/webp','image/gif'];
+        if (!allowed.includes(file.type)) {
+          alert('Please use JPG, PNG, WebP, or GIF. HEIC files from iPhone need to be converted first.\n\nOn iPhone: Open photo → Share → Save to Files (saves as JPG)');
+          this.value = '';
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Photo must be under 5MB.');
+          this.value = '';
+          return;
+        }
+        fcPhotoName = file.name;
+        fcPhotoType = file.type;
         const reader = new FileReader();
         reader.onload = e => {
-          document.getElementById('fcPhotoImg').src = e.target.result;
+          const dataUrl = e.target.result;
+          fcPhotoBase64 = dataUrl.split(',')[1];
+          document.getElementById('fcPhotoImg').src = dataUrl;
           document.getElementById('fcPhotoPreview').style.display = 'flex';
           document.getElementById('fcPhotoPreview').style.alignItems = 'center';
         };
@@ -902,40 +931,36 @@
     }
   });
 
-  async function uploadPhoto(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async e => {
-        const base64 = e.target.result.split(',')[1];
-        try {
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ filename: file.name, contentType: file.type, data: base64 })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Upload failed');
-          resolve(data.url);
-        } catch(e) { reject(e); }
-      };
-      reader.readAsDataURL(file);
+  let fcPhotoBase64 = null;
+  let fcPhotoType = null;
+  let fcPhotoName = null;
+
+  async function uploadPhoto() {
+    if (!fcPhotoBase64) throw new Error('No photo selected');
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ filename: fcPhotoName, contentType: fcPhotoType, data: fcPhotoBase64 })
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    return data.url;
   }
 
   async function addFeatureCard() {
     const title = document.getElementById('fcTitle').value.trim();
     const body = document.getElementById('fcBody').value.trim();
     const font = document.getElementById('fcFont').value;
-    const photoFile = document.getElementById('fcPhoto').files[0];
+    // photo handled via fcPhotoBase64
     const sort_order = parseInt(document.getElementById('fcOrder').value) || 0;
     const msg = document.getElementById('fcMsg');
     if (!title) { msg.textContent='Title is required.'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
     msg.textContent='Saving...'; msg.style.color='#5c3d2e'; msg.style.display='block';
     try {
       let photo_url = null;
-      if (photoFile) {
-        msg.textContent='Uploading photo...'; 
-        photo_url = await uploadPhoto(photoFile);
+      if (fcPhotoBase64) {
+        msg.textContent='Uploading photo...';
+        photo_url = await uploadPhoto();
       }
       const res = await fetch('/api/feature-cards', {
         method: 'POST',
@@ -1012,6 +1037,7 @@
   function clearPhoto() {
     document.getElementById('fcPhoto').value = '';
     document.getElementById('fcPhotoPreview').style.display = 'none';
+    fcPhotoBase64 = null; fcPhotoType = null; fcPhotoName = null;
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -1020,9 +1046,24 @@
       photoInput.addEventListener('change', function() {
         const file = this.files[0];
         if (!file) return;
+        const allowed = ['image/jpeg','image/png','image/webp','image/gif'];
+        if (!allowed.includes(file.type)) {
+          alert('Please use JPG, PNG, WebP, or GIF. HEIC files from iPhone need to be converted first.\n\nOn iPhone: Open photo → Share → Save to Files (saves as JPG)');
+          this.value = '';
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Photo must be under 5MB.');
+          this.value = '';
+          return;
+        }
+        fcPhotoName = file.name;
+        fcPhotoType = file.type;
         const reader = new FileReader();
         reader.onload = e => {
-          document.getElementById('fcPhotoImg').src = e.target.result;
+          const dataUrl = e.target.result;
+          fcPhotoBase64 = dataUrl.split(',')[1];
+          document.getElementById('fcPhotoImg').src = dataUrl;
           document.getElementById('fcPhotoPreview').style.display = 'flex';
           document.getElementById('fcPhotoPreview').style.alignItems = 'center';
         };
@@ -1031,40 +1072,36 @@
     }
   });
 
-  async function uploadPhoto(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async e => {
-        const base64 = e.target.result.split(',')[1];
-        try {
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ filename: file.name, contentType: file.type, data: base64 })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Upload failed');
-          resolve(data.url);
-        } catch(e) { reject(e); }
-      };
-      reader.readAsDataURL(file);
+  let fcPhotoBase64 = null;
+  let fcPhotoType = null;
+  let fcPhotoName = null;
+
+  async function uploadPhoto() {
+    if (!fcPhotoBase64) throw new Error('No photo selected');
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ filename: fcPhotoName, contentType: fcPhotoType, data: fcPhotoBase64 })
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    return data.url;
   }
 
   async function addFeatureCard() {
     const title = document.getElementById('fcTitle').value.trim();
     const body = document.getElementById('fcBody').value.trim();
     const font = document.getElementById('fcFont').value;
-    const photoFile = document.getElementById('fcPhoto').files[0];
+    // photo handled via fcPhotoBase64
     const sort_order = parseInt(document.getElementById('fcOrder').value) || 0;
     const msg = document.getElementById('fcMsg');
     if (!title) { msg.textContent='Title is required.'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
     msg.textContent='Saving...'; msg.style.color='#5c3d2e'; msg.style.display='block';
     try {
       let photo_url = null;
-      if (photoFile) {
-        msg.textContent='Uploading photo...'; 
-        photo_url = await uploadPhoto(photoFile);
+      if (fcPhotoBase64) {
+        msg.textContent='Uploading photo...';
+        photo_url = await uploadPhoto();
       }
       const res = await fetch('/api/feature-cards', {
         method: 'POST',
