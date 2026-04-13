@@ -52,8 +52,17 @@ export default async function handler(req, res) {
 
     // Admin bypass
     if (isAdmin) {
-      const { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, newPin } = body;
-      const updates = { name, phone, email: email||null, sobriety_date: sobriety_date||null, sponsor_dropdown: sponsor_dropdown||null, sponsor_other: sponsor_other||null };
+      const { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, newPin, last_renewed, expiry_warned, active } = body;
+      const updates = {};
+      if (name !== undefined) updates.name = name;
+      if (phone !== undefined) updates.phone = phone;
+      if (email !== undefined) updates.email = email||null;
+      if (sobriety_date !== undefined) updates.sobriety_date = sobriety_date||null;
+      if (sponsor_dropdown !== undefined) updates.sponsor_dropdown = sponsor_dropdown||null;
+      if (sponsor_other !== undefined) updates.sponsor_other = sponsor_other||null;
+      if (last_renewed !== undefined) updates.last_renewed = last_renewed;
+      if (expiry_warned !== undefined) updates.expiry_warned = expiry_warned;
+      if (active !== undefined) updates.active = active;
       if (newPin && /^\d{4}$/.test(newPin)) updates.pin_hash = hashPin(newPin);
       const { error } = await supabase.from('members').update(updates).eq('id', id);
       if (error) return res.status(500).json({ error: error.message });
