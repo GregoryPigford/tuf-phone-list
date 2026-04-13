@@ -986,7 +986,16 @@ async function loadAnnouncement(){
   let extra="";
   try{
     const r=await fetch("/api/announcement");
-    if(r.ok){const d=await r.json();(d.items||[]).forEach(item=>{if(item.text&&item.text.trim()) extra+=`<div class="ha-item">${esc(item.text)}</div>`;});}
+    if(r.ok){
+      const d=await r.json();
+      (d.items||[]).forEach(item=>{
+        if(item.text&&item.text.trim()){
+          const titleHtml=item.title&&item.title.trim()
+            ?`<div class="ha-item-title">${esc(item.title)}</div>`:"";
+          extra+=`<div class="ha-item">${titleHtml}<div class="ha-item-body">${esc(item.text)}</div></div>`;
+        }
+      });
+    }
   }catch(e){}
   const homeList=document.getElementById("homeAnnounceList");if(homeList) homeList.innerHTML=biz+extra;
   const updList=document.getElementById("updatesAnnounceList");if(updList) updList.innerHTML=biz+extra;

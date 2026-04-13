@@ -699,11 +699,23 @@
       return;
     }
     list.innerHTML = items.map(item => `
-      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:7px;padding:.65rem 1rem;margin-bottom:.5rem">
+      <div id="ann-${item.id}" style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:7px;padding:.65rem 1rem;margin-bottom:.5rem">
         ${item.title ? `<div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2d5a1e;margin-bottom:.2rem">${esc(item.title)}</div>` : ''}
         <div style="display:flex;align-items:center;gap:8px">
           <span style="flex:1;font-size:.85rem;color:#2d1f17">${esc(item.text)}</span>
-          <button onclick="deleteAnnouncement('${item.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer;flex-shrink:0">Remove</button>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button onclick="editAnnouncement('${item.id}','${esc(item.title||'')}','${esc(item.text)}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#5c3d2e;cursor:pointer">Edit</button>
+            <button onclick="deleteAnnouncement('${item.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+          </div>
+        </div>
+        <div id="ann-edit-${item.id}" style="display:none;margin-top:.6rem;border-top:1px solid #ddd0c4;padding-top:.6rem">
+          <input type="text" id="ann-edit-title-${item.id}" placeholder="Title (optional)" value="${esc(item.title||'')}" style="width:100%;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff;margin-bottom:6px"/>
+          <textarea id="ann-edit-body-${item.id}" style="width:100%;height:56px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;resize:vertical;background:#fff">${esc(item.text)}</textarea>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button onclick="saveAnnouncement('${item.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="cancelEditAnn('${item.id}')" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer;color:#7a5c50">Cancel</button>
+            <div id="ann-edit-msg-${item.id}" style="font-size:.78rem;display:none;align-self:center"></div>
+          </div>
         </div>
       </div>`).join('');
   }
@@ -740,14 +752,38 @@
       return;
     }
     list.innerHTML = cards.map(card => `
-      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem;display:flex;gap:.75rem;align-items:flex-start">
-        ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
-        <div style="flex:1">
-          <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
-          ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
-          <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+      <div id="fc-${card.id}" style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem">
+        <div style="display:flex;gap:.75rem;align-items:flex-start">
+          ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
+          <div style="flex:1">
+            <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
+            ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
+            <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button onclick="editFeatureCard('${card.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#5c3d2e;cursor:pointer">Edit</button>
+            <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+          </div>
         </div>
-        <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer;flex-shrink:0">Remove</button>
+        <div id="fc-edit-${card.id}" style="display:none;margin-top:.75rem;border-top:1px solid #ddd0c4;padding-top:.75rem">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <input type="text" id="fc-edit-title-${card.id}" value="${esc(card.title)}" style="padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#fff"/>
+            <textarea id="fc-edit-body-${card.id}" style="height:56px;padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;resize:vertical;background:#fff">${esc(card.body||'')}</textarea>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="fc-edit-font-${card.id}" style="padding:6px 9px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff">
+                <option value="cursive" ${card.font==='cursive'?'selected':''}>Cursive</option>
+                <option value="serif" ${card.font==='serif'?'selected':''}>Serif</option>
+                <option value="sans" ${card.font==='sans'?'selected':''}>Sans-serif</option>
+              </select>
+              <input type="number" id="fc-edit-order-${card.id}" value="${card.sort_order}" min="0" style="width:70px;padding:6px 9px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff" placeholder="Order"/>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="saveFeatureCard('${card.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-family:inherit;font-size:.83rem;cursor:pointer">Save</button>
+              <button onclick="cancelEditFC('${card.id}')" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:7px 14px;font-family:inherit;font-size:.83rem;cursor:pointer;color:#7a5c50">Cancel</button>
+            </div>
+            <div id="fc-edit-msg-${card.id}" style="font-size:.78rem;display:none"></div>
+          </div>
+        </div>
       </div>`).join('');
   }
 
@@ -837,6 +873,31 @@
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
   }
 
+  function editFeatureCard(id) {
+    document.getElementById('fc-edit-'+id).style.display='block';
+  }
+  function cancelEditFC(id) {
+    document.getElementById('fc-edit-'+id).style.display='none';
+  }
+  async function saveFeatureCard(id) {
+    const title = document.getElementById('fc-edit-title-'+id).value.trim();
+    const body = document.getElementById('fc-edit-body-'+id).value.trim();
+    const font = document.getElementById('fc-edit-font-'+id).value;
+    const sort_order = parseInt(document.getElementById('fc-edit-order-'+id).value)||0;
+    const msg = document.getElementById('fc-edit-msg-'+id);
+    if (!title) { msg.textContent='Title required'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
+    try {
+      const res = await fetch('/api/feature-cards?id='+id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title, body: body||null, font, sort_order })
+      });
+      if (!res.ok) throw new Error('Failed');
+      msg.textContent='Saved!'; msg.style.color='#4a7c59'; msg.style.display='block';
+      setTimeout(()=>{ cancelEditFC(id); loadFeatureCardsAdmin(); }, 1000);
+    } catch(e) { msg.textContent='Save failed'; msg.style.color='#8b3a3a'; msg.style.display='block'; }
+  }
+
   async function deleteFeatureCard(id) {
     if (!confirm('Remove this feature card?')) return;
     try {
@@ -853,6 +914,29 @@
 
   loadAnnouncementAdmin();
     } catch(e) { showAdminMsg('Save failed.', false); }
+  }
+
+  function editAnnouncement(id, title, text) {
+    document.getElementById('ann-edit-'+id).style.display='block';
+  }
+  function cancelEditAnn(id) {
+    document.getElementById('ann-edit-'+id).style.display='none';
+  }
+  async function saveAnnouncement(id) {
+    const title = document.getElementById('ann-edit-title-'+id).value.trim();
+    const text = document.getElementById('ann-edit-body-'+id).value.trim();
+    const msg = document.getElementById('ann-edit-msg-'+id);
+    if (!text) { msg.textContent='Body required'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
+    try {
+      const res = await fetch('/api/announcement?id='+id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title: title||null, text })
+      });
+      if (!res.ok) throw new Error('Failed');
+      msg.textContent='Saved!'; msg.style.color='#4a7c59'; msg.style.display='block';
+      setTimeout(()=>{ cancelEditAnn(id); loadAnnouncementAdmin(); }, 1000);
+    } catch(e) { msg.textContent='Save failed'; msg.style.color='#8b3a3a'; msg.style.display='block'; }
   }
 
   async function deleteAnnouncement(id) {
@@ -882,14 +966,38 @@
       return;
     }
     list.innerHTML = cards.map(card => `
-      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem;display:flex;gap:.75rem;align-items:flex-start">
-        ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
-        <div style="flex:1">
-          <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
-          ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
-          <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+      <div id="fc-${card.id}" style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem">
+        <div style="display:flex;gap:.75rem;align-items:flex-start">
+          ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
+          <div style="flex:1">
+            <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
+            ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
+            <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button onclick="editFeatureCard('${card.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#5c3d2e;cursor:pointer">Edit</button>
+            <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+          </div>
         </div>
-        <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer;flex-shrink:0">Remove</button>
+        <div id="fc-edit-${card.id}" style="display:none;margin-top:.75rem;border-top:1px solid #ddd0c4;padding-top:.75rem">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <input type="text" id="fc-edit-title-${card.id}" value="${esc(card.title)}" style="padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#fff"/>
+            <textarea id="fc-edit-body-${card.id}" style="height:56px;padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;resize:vertical;background:#fff">${esc(card.body||'')}</textarea>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="fc-edit-font-${card.id}" style="padding:6px 9px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff">
+                <option value="cursive" ${card.font==='cursive'?'selected':''}>Cursive</option>
+                <option value="serif" ${card.font==='serif'?'selected':''}>Serif</option>
+                <option value="sans" ${card.font==='sans'?'selected':''}>Sans-serif</option>
+              </select>
+              <input type="number" id="fc-edit-order-${card.id}" value="${card.sort_order}" min="0" style="width:70px;padding:6px 9px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff" placeholder="Order"/>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="saveFeatureCard('${card.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-family:inherit;font-size:.83rem;cursor:pointer">Save</button>
+              <button onclick="cancelEditFC('${card.id}')" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:7px 14px;font-family:inherit;font-size:.83rem;cursor:pointer;color:#7a5c50">Cancel</button>
+            </div>
+            <div id="fc-edit-msg-${card.id}" style="font-size:.78rem;display:none"></div>
+          </div>
+        </div>
       </div>`).join('');
   }
 
@@ -977,6 +1085,31 @@
       setTimeout(()=>msg.style.display='none',3000);
       loadFeatureCardsAdmin();
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
+  }
+
+  function editFeatureCard(id) {
+    document.getElementById('fc-edit-'+id).style.display='block';
+  }
+  function cancelEditFC(id) {
+    document.getElementById('fc-edit-'+id).style.display='none';
+  }
+  async function saveFeatureCard(id) {
+    const title = document.getElementById('fc-edit-title-'+id).value.trim();
+    const body = document.getElementById('fc-edit-body-'+id).value.trim();
+    const font = document.getElementById('fc-edit-font-'+id).value;
+    const sort_order = parseInt(document.getElementById('fc-edit-order-'+id).value)||0;
+    const msg = document.getElementById('fc-edit-msg-'+id);
+    if (!title) { msg.textContent='Title required'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
+    try {
+      const res = await fetch('/api/feature-cards?id='+id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title, body: body||null, font, sort_order })
+      });
+      if (!res.ok) throw new Error('Failed');
+      msg.textContent='Saved!'; msg.style.color='#4a7c59'; msg.style.display='block';
+      setTimeout(()=>{ cancelEditFC(id); loadFeatureCardsAdmin(); }, 1000);
+    } catch(e) { msg.textContent='Save failed'; msg.style.color='#8b3a3a'; msg.style.display='block'; }
   }
 
   async function deleteFeatureCard(id) {
@@ -1023,14 +1156,38 @@
       return;
     }
     list.innerHTML = cards.map(card => `
-      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem;display:flex;gap:.75rem;align-items:flex-start">
-        ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
-        <div style="flex:1">
-          <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
-          ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
-          <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+      <div id="fc-${card.id}" style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem">
+        <div style="display:flex;gap:.75rem;align-items:flex-start">
+          ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
+          <div style="flex:1">
+            <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
+            ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
+            <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button onclick="editFeatureCard('${card.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#5c3d2e;cursor:pointer">Edit</button>
+            <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+          </div>
         </div>
-        <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer;flex-shrink:0">Remove</button>
+        <div id="fc-edit-${card.id}" style="display:none;margin-top:.75rem;border-top:1px solid #ddd0c4;padding-top:.75rem">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <input type="text" id="fc-edit-title-${card.id}" value="${esc(card.title)}" style="padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#fff"/>
+            <textarea id="fc-edit-body-${card.id}" style="height:56px;padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;resize:vertical;background:#fff">${esc(card.body||'')}</textarea>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="fc-edit-font-${card.id}" style="padding:6px 9px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff">
+                <option value="cursive" ${card.font==='cursive'?'selected':''}>Cursive</option>
+                <option value="serif" ${card.font==='serif'?'selected':''}>Serif</option>
+                <option value="sans" ${card.font==='sans'?'selected':''}>Sans-serif</option>
+              </select>
+              <input type="number" id="fc-edit-order-${card.id}" value="${card.sort_order}" min="0" style="width:70px;padding:6px 9px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff" placeholder="Order"/>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="saveFeatureCard('${card.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-family:inherit;font-size:.83rem;cursor:pointer">Save</button>
+              <button onclick="cancelEditFC('${card.id}')" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:7px 14px;font-family:inherit;font-size:.83rem;cursor:pointer;color:#7a5c50">Cancel</button>
+            </div>
+            <div id="fc-edit-msg-${card.id}" style="font-size:.78rem;display:none"></div>
+          </div>
+        </div>
       </div>`).join('');
   }
 
@@ -1118,6 +1275,31 @@
       setTimeout(()=>msg.style.display='none',3000);
       loadFeatureCardsAdmin();
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
+  }
+
+  function editFeatureCard(id) {
+    document.getElementById('fc-edit-'+id).style.display='block';
+  }
+  function cancelEditFC(id) {
+    document.getElementById('fc-edit-'+id).style.display='none';
+  }
+  async function saveFeatureCard(id) {
+    const title = document.getElementById('fc-edit-title-'+id).value.trim();
+    const body = document.getElementById('fc-edit-body-'+id).value.trim();
+    const font = document.getElementById('fc-edit-font-'+id).value;
+    const sort_order = parseInt(document.getElementById('fc-edit-order-'+id).value)||0;
+    const msg = document.getElementById('fc-edit-msg-'+id);
+    if (!title) { msg.textContent='Title required'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
+    try {
+      const res = await fetch('/api/feature-cards?id='+id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title, body: body||null, font, sort_order })
+      });
+      if (!res.ok) throw new Error('Failed');
+      msg.textContent='Saved!'; msg.style.color='#4a7c59'; msg.style.display='block';
+      setTimeout(()=>{ cancelEditFC(id); loadFeatureCardsAdmin(); }, 1000);
+    } catch(e) { msg.textContent='Save failed'; msg.style.color='#8b3a3a'; msg.style.display='block'; }
   }
 
   async function deleteFeatureCard(id) {
