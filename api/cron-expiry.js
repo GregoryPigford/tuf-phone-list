@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.FROM_EMAIL || 'noreply@tufmeeting.org';
-const BASE_URL = 'https://tuf-phone-list.vercel.app';
+const BASE_URL = 'https://tufmeeting.org';
 
 export default async function handler(req, res) {
   // Vercel cron calls with GET, protect with a secret
