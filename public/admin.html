@@ -372,11 +372,58 @@
       <div id="adminAnnounceList" style="margin-bottom:1rem"></div>
 
       <!-- Add new -->
-      <div style="display:flex;gap:8px;align-items:flex-start">
-        <textarea id="announcementText" placeholder="Add an announcement... (e.g. Meeting moved to Fellowship Hall this Sunday)" style="flex:1;height:72px;padding:9px 12px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;background:#faf7f2"></textarea>
-        <button onclick="addAnnouncement()" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:9px 16px;font-family:inherit;font-size:.85rem;cursor:pointer;white-space:nowrap;height:72px">Add</button>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem">
+        <input type="text" id="announcementTitle" placeholder="Title (optional — shows in green like Business Meeting)" style="padding:8px 11px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#faf7f2"/>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <textarea id="announcementText" placeholder="Announcement body text..." style="flex:1;height:72px;padding:9px 12px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;background:#faf7f2"></textarea>
+          <button onclick="addAnnouncement()" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:9px 16px;font-family:inherit;font-size:.85rem;cursor:pointer;white-space:nowrap;height:72px">Add</button>
+        </div>
       </div>
       <div id="announceMsg" style="font-size:.82rem;margin-top:.5rem;display:none"></div>
+    </div>
+
+
+    <!-- FEATURE CARDS EDITOR -->
+    <div style="background:#fff9f2;border:1px solid #ddd0c4;border-radius:10px;padding:1.2rem 1.5rem;margin-bottom:1.25rem">
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;color:#5c3d2e;font-weight:600;margin-bottom:.3rem">🖼️ Home Feature Cards</div>
+      <div style="font-size:.75rem;color:#9a8a7a;margin-bottom:1rem">Cards shown below the hero on the home screen (e.g. memorials, announcements). Drag to reorder coming soon.</div>
+
+      <div id="adminFeatureCardsList" style="margin-bottom:1rem"></div>
+
+      <!-- Add new card -->
+      <div style="background:#f5f0ea;border:1px solid #ddd0c4;border-radius:8px;padding:1rem;margin-top:.5rem">
+        <div style="font-size:.75rem;font-weight:600;color:#5c3d2e;margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.06em">Add New Card</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input type="text" id="fcTitle" placeholder="Title (e.g. Rest in Peace, Gerry C.)" style="padding:8px 11px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.88rem;background:#faf7f2"/>
+          <textarea id="fcBody" placeholder="Body text (optional)" style="height:60px;padding:8px 11px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.88rem;resize:vertical;background:#faf7f2"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div style="flex:1;min-width:140px">
+              <label style="font-size:.72rem;color:#7a5c50;display:block;margin-bottom:3px">Title Font</label>
+              <select id="fcFont" style="width:100%;padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#faf7f2">
+                <option value="cursive">Cursive (Dancing Script)</option>
+                <option value="serif">Serif (Fraunces)</option>
+                <option value="sans">Sans-serif (DM Sans)</option>
+              </select>
+            </div>
+            <div style="flex:1;min-width:140px">
+              <label style="font-size:.72rem;color:#7a5c50;display:block;margin-bottom:3px">Photo (optional)</label>
+              <input type="file" id="fcPhoto" accept="image/*" style="width:100%;padding:4px;font-size:.82rem;font-family:inherit"/>
+              <div id="fcPhotoPreview" style="margin-top:5px;display:none">
+                <img id="fcPhotoImg" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid #ddd0c4"/>
+                <button onclick="clearPhoto()" style="background:none;border:none;color:#8b3a3a;font-size:.75rem;cursor:pointer;margin-left:6px">✕ Remove</button>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="flex:1;min-width:80px">
+              <label style="font-size:.72rem;color:#7a5c50;display:block;margin-bottom:3px">Order (lower = first)</label>
+              <input type="number" id="fcOrder" value="0" min="0" style="width:80px;padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#faf7f2"/>
+            </div>
+            <button onclick="addFeatureCard()" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:9px 20px;font-family:inherit;font-size:.85rem;cursor:pointer;margin-top:14px">Add Card</button>
+          </div>
+        </div>
+        <div id="fcMsg" style="font-size:.82rem;margin-top:.5rem;display:none"></div>
+      </div>
     </div>
 
     <div class="stats-bar" id="statsBar">
@@ -651,26 +698,147 @@
       return;
     }
     list.innerHTML = items.map(item => `
-      <div style="display:flex;align-items:center;gap:8px;background:#faf7f2;border:1px solid #ddd0c4;border-radius:7px;padding:.65rem 1rem;margin-bottom:.5rem">
-        <span style="flex:1;font-size:.85rem;color:#2d1f17">${esc(item.text)}</span>
-        <button onclick="deleteAnnouncement('${item.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer">Remove</button>
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:7px;padding:.65rem 1rem;margin-bottom:.5rem">
+        ${item.title ? `<div style="font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2d5a1e;margin-bottom:.2rem">${esc(item.title)}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="flex:1;font-size:.85rem;color:#2d1f17">${esc(item.text)}</span>
+          <button onclick="deleteAnnouncement('${item.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer;flex-shrink:0">Remove</button>
+        </div>
       </div>`).join('');
   }
 
   async function addAnnouncement() {
+    const title = document.getElementById('announcementTitle').value.trim();
     const text = document.getElementById('announcementText').value.trim();
-    const msg = document.getElementById('announceMsg');
     if (!text) { showAdminMsg('Please enter announcement text.', false); return; }
     try {
       const res = await fetch('/api/announcement', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ title: title || null, text })
       });
       if (!res.ok) throw new Error('Failed');
+      document.getElementById('announcementTitle').value = '';
       document.getElementById('announcementText').value = '';
       showAdminMsg('Announcement added!', true);
-      loadAnnouncementAdmin();
+    
+  // ── FEATURE CARDS ──
+  async function loadFeatureCardsAdmin() {
+    try {
+      const res = await fetch('/api/feature-cards');
+      const data = await res.json();
+      renderFeatureCardsAdmin(data.cards || []);
+    } catch(e) {}
+  }
+
+  function renderFeatureCardsAdmin(cards) {
+    const list = document.getElementById('adminFeatureCardsList');
+    if (!list) return;
+    if (!cards.length) {
+      list.innerHTML = '<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No feature cards. Add one below.</p>';
+      return;
+    }
+    list.innerHTML = cards.map(card => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem;display:flex;gap:.75rem;align-items:flex-start">
+        ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
+        <div style="flex:1">
+          <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
+          ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
+          <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+        </div>
+        <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer;flex-shrink:0">Remove</button>
+      </div>`).join('');
+  }
+
+  function clearPhoto() {
+    document.getElementById('fcPhoto').value = '';
+    document.getElementById('fcPhotoPreview').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const photoInput = document.getElementById('fcPhoto');
+    if (photoInput) {
+      photoInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('fcPhotoImg').src = e.target.result;
+          document.getElementById('fcPhotoPreview').style.display = 'flex';
+          document.getElementById('fcPhotoPreview').style.alignItems = 'center';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  });
+
+  async function uploadPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        const base64 = e.target.result.split(',')[1];
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ filename: file.name, contentType: file.type, data: base64 })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Upload failed');
+          resolve(data.url);
+        } catch(e) { reject(e); }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function addFeatureCard() {
+    const title = document.getElementById('fcTitle').value.trim();
+    const body = document.getElementById('fcBody').value.trim();
+    const font = document.getElementById('fcFont').value;
+    const photoFile = document.getElementById('fcPhoto').files[0];
+    const sort_order = parseInt(document.getElementById('fcOrder').value) || 0;
+    const msg = document.getElementById('fcMsg');
+    if (!title) { msg.textContent='Title is required.'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
+    msg.textContent='Saving...'; msg.style.color='#5c3d2e'; msg.style.display='block';
+    try {
+      let photo_url = null;
+      if (photoFile) {
+        msg.textContent='Uploading photo...'; 
+        photo_url = await uploadPhoto(photoFile);
+      }
+      const res = await fetch('/api/feature-cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title, body: body||null, font, photo_url, sort_order })
+      });
+      if (!res.ok) throw new Error('Failed');
+      document.getElementById('fcTitle').value = '';
+      document.getElementById('fcBody').value = '';
+      document.getElementById('fcPhoto').value = '';
+      document.getElementById('fcPhotoPreview').style.display = 'none';
+      document.getElementById('fcOrder').value = '0';
+      msg.textContent='Card added!'; msg.style.color='#4a7c59';
+      setTimeout(()=>msg.style.display='none',3000);
+      loadFeatureCardsAdmin();
+    } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
+  }
+
+  async function deleteFeatureCard(id) {
+    if (!confirm('Remove this feature card?')) return;
+    try {
+      const res = await fetch(`/api/feature-cards?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadFeatureCardsAdmin();
+    } catch(e) { alert('Delete failed.'); }
+  }
+
+  loadFeatureCardsAdmin();
+
+  loadAnnouncementAdmin();
     } catch(e) { showAdminMsg('Save failed.', false); }
   }
 
@@ -683,7 +851,124 @@
       });
       if (!res.ok) throw new Error('Failed');
       showAdminMsg('Removed.', true);
-      loadAnnouncementAdmin();
+    
+  // ── FEATURE CARDS ──
+  async function loadFeatureCardsAdmin() {
+    try {
+      const res = await fetch('/api/feature-cards');
+      const data = await res.json();
+      renderFeatureCardsAdmin(data.cards || []);
+    } catch(e) {}
+  }
+
+  function renderFeatureCardsAdmin(cards) {
+    const list = document.getElementById('adminFeatureCardsList');
+    if (!list) return;
+    if (!cards.length) {
+      list.innerHTML = '<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No feature cards. Add one below.</p>';
+      return;
+    }
+    list.innerHTML = cards.map(card => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem;display:flex;gap:.75rem;align-items:flex-start">
+        ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
+        <div style="flex:1">
+          <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
+          ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
+          <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+        </div>
+        <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer;flex-shrink:0">Remove</button>
+      </div>`).join('');
+  }
+
+  function clearPhoto() {
+    document.getElementById('fcPhoto').value = '';
+    document.getElementById('fcPhotoPreview').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const photoInput = document.getElementById('fcPhoto');
+    if (photoInput) {
+      photoInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('fcPhotoImg').src = e.target.result;
+          document.getElementById('fcPhotoPreview').style.display = 'flex';
+          document.getElementById('fcPhotoPreview').style.alignItems = 'center';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  });
+
+  async function uploadPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        const base64 = e.target.result.split(',')[1];
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ filename: file.name, contentType: file.type, data: base64 })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Upload failed');
+          resolve(data.url);
+        } catch(e) { reject(e); }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function addFeatureCard() {
+    const title = document.getElementById('fcTitle').value.trim();
+    const body = document.getElementById('fcBody').value.trim();
+    const font = document.getElementById('fcFont').value;
+    const photoFile = document.getElementById('fcPhoto').files[0];
+    const sort_order = parseInt(document.getElementById('fcOrder').value) || 0;
+    const msg = document.getElementById('fcMsg');
+    if (!title) { msg.textContent='Title is required.'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
+    msg.textContent='Saving...'; msg.style.color='#5c3d2e'; msg.style.display='block';
+    try {
+      let photo_url = null;
+      if (photoFile) {
+        msg.textContent='Uploading photo...'; 
+        photo_url = await uploadPhoto(photoFile);
+      }
+      const res = await fetch('/api/feature-cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title, body: body||null, font, photo_url, sort_order })
+      });
+      if (!res.ok) throw new Error('Failed');
+      document.getElementById('fcTitle').value = '';
+      document.getElementById('fcBody').value = '';
+      document.getElementById('fcPhoto').value = '';
+      document.getElementById('fcPhotoPreview').style.display = 'none';
+      document.getElementById('fcOrder').value = '0';
+      msg.textContent='Card added!'; msg.style.color='#4a7c59';
+      setTimeout(()=>msg.style.display='none',3000);
+      loadFeatureCardsAdmin();
+    } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
+  }
+
+  async function deleteFeatureCard(id) {
+    if (!confirm('Remove this feature card?')) return;
+    try {
+      const res = await fetch(`/api/feature-cards?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadFeatureCardsAdmin();
+    } catch(e) { alert('Delete failed.'); }
+  }
+
+  loadFeatureCardsAdmin();
+
+  loadAnnouncementAdmin();
     } catch(e) { showAdminMsg('Delete failed.', false); }
   }
 
@@ -694,6 +979,123 @@
     msg.style.display = 'block';
     setTimeout(() => msg.style.display = 'none', 3000);
   }
+
+
+  // ── FEATURE CARDS ──
+  async function loadFeatureCardsAdmin() {
+    try {
+      const res = await fetch('/api/feature-cards');
+      const data = await res.json();
+      renderFeatureCardsAdmin(data.cards || []);
+    } catch(e) {}
+  }
+
+  function renderFeatureCardsAdmin(cards) {
+    const list = document.getElementById('adminFeatureCardsList');
+    if (!list) return;
+    if (!cards.length) {
+      list.innerHTML = '<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No feature cards. Add one below.</p>';
+      return;
+    }
+    list.innerHTML = cards.map(card => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.6rem;display:flex;gap:.75rem;align-items:flex-start">
+        ${card.photo_url ? `<img src="${card.photo_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0"/>` : '<div style="width:48px;height:48px;border-radius:50%;background:#e4ddd4;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.2rem">🖼️</div>'}
+        <div style="flex:1">
+          <div style="font-size:.9rem;font-weight:600;color:#2d1f17">${esc(card.title)}</div>
+          ${card.body ? `<div style="font-size:.78rem;color:#7a5c50;margin-top:2px">${esc(card.body.slice(0,80))}${card.body.length>80?'...':''}</div>` : ''}
+          <div style="font-size:.7rem;color:#9a8a7a;margin-top:3px">Font: ${card.font} · Order: ${card.sort_order}</div>
+        </div>
+        <button onclick="deleteFeatureCard('${card.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.75rem;color:#8b3a3a;cursor:pointer;flex-shrink:0">Remove</button>
+      </div>`).join('');
+  }
+
+  function clearPhoto() {
+    document.getElementById('fcPhoto').value = '';
+    document.getElementById('fcPhotoPreview').style.display = 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const photoInput = document.getElementById('fcPhoto');
+    if (photoInput) {
+      photoInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('fcPhotoImg').src = e.target.result;
+          document.getElementById('fcPhotoPreview').style.display = 'flex';
+          document.getElementById('fcPhotoPreview').style.alignItems = 'center';
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  });
+
+  async function uploadPhoto(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        const base64 = e.target.result.split(',')[1];
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ filename: file.name, contentType: file.type, data: base64 })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Upload failed');
+          resolve(data.url);
+        } catch(e) { reject(e); }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function addFeatureCard() {
+    const title = document.getElementById('fcTitle').value.trim();
+    const body = document.getElementById('fcBody').value.trim();
+    const font = document.getElementById('fcFont').value;
+    const photoFile = document.getElementById('fcPhoto').files[0];
+    const sort_order = parseInt(document.getElementById('fcOrder').value) || 0;
+    const msg = document.getElementById('fcMsg');
+    if (!title) { msg.textContent='Title is required.'; msg.style.color='#8b3a3a'; msg.style.display='block'; return; }
+    msg.textContent='Saving...'; msg.style.color='#5c3d2e'; msg.style.display='block';
+    try {
+      let photo_url = null;
+      if (photoFile) {
+        msg.textContent='Uploading photo...'; 
+        photo_url = await uploadPhoto(photoFile);
+      }
+      const res = await fetch('/api/feature-cards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ title, body: body||null, font, photo_url, sort_order })
+      });
+      if (!res.ok) throw new Error('Failed');
+      document.getElementById('fcTitle').value = '';
+      document.getElementById('fcBody').value = '';
+      document.getElementById('fcPhoto').value = '';
+      document.getElementById('fcPhotoPreview').style.display = 'none';
+      document.getElementById('fcOrder').value = '0';
+      msg.textContent='Card added!'; msg.style.color='#4a7c59';
+      setTimeout(()=>msg.style.display='none',3000);
+      loadFeatureCardsAdmin();
+    } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
+  }
+
+  async function deleteFeatureCard(id) {
+    if (!confirm('Remove this feature card?')) return;
+    try {
+      const res = await fetch(`/api/feature-cards?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed');
+      loadFeatureCardsAdmin();
+    } catch(e) { alert('Delete failed.'); }
+  }
+
+  loadFeatureCardsAdmin();
 
   loadAnnouncementAdmin();
 
