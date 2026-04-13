@@ -453,17 +453,17 @@
         <div class="rcard-arrow">→</div>
       </a>
 
-      <a class="rcard" href="https://account.venmo.com/u/tuf7th" target="_blank" rel="noopener" style="--rc:#1a4a2a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Ccircle cx='10' cy='10' r='6'/%3E%3Ccircle cx='30' cy='30' r='6'/%3E%3C/g%3E%3C/svg%3E&quot;)">
+      <div class="rcard" onclick="showDonateModal()" style="--rc:#1a4a2a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Ccircle cx='10' cy='10' r='6'/%3E%3Ccircle cx='30' cy='30' r='6'/%3E%3C/g%3E%3C/svg%3E&quot;);cursor:pointer">
         <div class="rcard-bg"></div>
         <div class="rcard-icon">🤲</div>
         <div class="rcard-text">
           <div class="rcard-title">7th Tradition — Donate</div>
-          <div class="rcard-desc">Venmo: @tuf7th · Zelle: theunshakablefoundation@gmail.com</div>
+          <div class="rcard-desc">Venmo or Zelle — tap to choose</div>
         </div>
         <div class="rcard-arrow">→</div>
-      </a>
+      </div>
 
-      <a class="rcard" href="mailto:theunshakablefoundation@gmail.com" style="--rc:#7a3a1a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6z'/%3E%3C/g%3E%3C/svg%3E&quot;)">
+      <a class="rcard" href="mailto:theunshakablefoundation@gmail.com" target="_blank" style="--rc:#7a3a1a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6z'/%3E%3C/g%3E%3C/svg%3E&quot;)">
         <div class="rcard-bg"></div>
         <div class="rcard-icon">✉️</div>
         <div class="rcard-text">
@@ -473,11 +473,11 @@
         <div class="rcard-arrow">→</div>
       </a>
 
-      <a class="rcard" href="mailto:theunshakablefoundation@gmail.com?subject=Free Big Book Request" style="--rc:#3a2a1a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Crect x='5' y='5' width='30' height='35' rx='2'/%3E%3C/g%3E%3C/svg%3E&quot;)">
+      <a class="rcard" href="mailto:theunshakablefoundation@gmail.com?subject=Big%20Book%20Request" style="--rc:#3a2a1a;--rp:url(&quot;data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Crect x='5' y='5' width='30' height='35' rx='2'/%3E%3C/g%3E%3C/svg%3E&quot;)">
         <div class="rcard-bg"></div>
         <div class="rcard-icon">📚</div>
         <div class="rcard-text">
-          <div class="rcard-title">Free Big Book</div>
+          <div class="rcard-title">Need a Big Book?</div>
           <div class="rcard-desc">Don't have one? Email us — we'll send you a free copy</div>
         </div>
         <div class="rcard-arrow">→</div>
@@ -736,6 +736,31 @@
   </div>
 
 </div><!-- /screens -->
+
+<!-- DONATE MODAL -->
+<div id="donateModal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:var(--white);border-radius:var(--radius);padding:1.75rem;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <h2 style="font-family:'Fraunces',serif;font-size:1.3rem;font-weight:900;color:var(--navy);margin-bottom:.35rem">7th Tradition</h2>
+    <p style="font-size:.84rem;color:var(--text-s);line-height:1.65;margin-bottom:1.25rem">AA is self-supporting through our own contributions. Every donation helps keep TUF going. Choose your preferred method:</p>
+    <a href="https://account.venmo.com/u/tuf7th" target="_blank" rel="noopener" onclick="hideDonateModal()" style="display:flex;align-items:center;gap:1rem;background:#008CFF;border-radius:var(--radius-s);padding:1rem 1.25rem;text-decoration:none;margin-bottom:.75rem;transition:opacity .2s">
+      <span style="font-size:1.5rem">💙</span>
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;color:white">Venmo</div>
+        <div style="font-size:.78rem;color:rgba(255,255,255,.8);margin-top:1px">@tuf7th</div>
+      </div>
+      <span style="margin-left:auto;color:rgba(255,255,255,.7);font-size:1.1rem">→</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:1rem;background:#6ec279;border-radius:var(--radius-s);padding:1rem 1.25rem;margin-bottom:1.25rem">
+      <span style="font-size:1.5rem">💚</span>
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:.95rem;font-weight:700;color:#1a3a1a">Zelle</div>
+        <div style="font-size:.78rem;color:#2a4a2a;margin-top:1px;line-height:1.5">Send to <strong>theunshakablefoundation@gmail.com</strong><br>Use that as the Zelle recipient ID</div>
+      </div>
+    </div>
+    <button onclick="hideDonateModal()" style="width:100%;height:42px;background:none;border:1.5px solid var(--border);border-radius:999px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--text-s);cursor:pointer">Close</button>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <!-- BOTTOM TABS (mobile only, fixed positioned) -->
@@ -1343,6 +1368,14 @@ async function confirmRemove(){
 function showMsg(id,text,type){const el=document.getElementById(id);el.textContent=text;el.className="msg "+type;}
 
 
+function showDonateModal(){
+  const m=document.getElementById("donateModal");
+  m.style.display="flex";
+}
+function hideDonateModal(){
+  document.getElementById("donateModal").style.display="none";
+}
+
 function getMeetingLocalTime(){
   // TUF meets at 10pm Pacific Time daily
   const now = new Date();
@@ -1371,6 +1404,14 @@ function getMeetingLocalTime(){
   }
 }
 
+
+function showDonateModal(){
+  const m=document.getElementById("donateModal");
+  m.style.display="flex";
+}
+function hideDonateModal(){
+  document.getElementById("donateModal").style.display="none";
+}
 
 function getMeetingLocalTime(){
   try{
