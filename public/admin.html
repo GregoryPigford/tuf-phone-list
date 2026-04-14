@@ -952,14 +952,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
@@ -1069,14 +1072,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
@@ -1153,14 +1159,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
@@ -1454,14 +1463,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
@@ -1571,14 +1583,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
@@ -1655,14 +1670,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
@@ -1932,14 +1950,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
@@ -2049,14 +2070,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
@@ -2133,14 +2157,17 @@
   }
 
   async function runExpiryCheck() {
+    const cronSecret = prompt('Enter your CRON_SECRET to run the check:');
+    if (!cronSecret) return;
     try {
       const res = await fetch('/api/cron-expiry', {
-        headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET || token}` }
+        headers: { 'Authorization': `Bearer ${cronSecret}` }
       });
+      if (res.status === 401) { alert('Wrong CRON_SECRET.'); return; }
       const d = await res.json();
-      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email: ${d.noEmail}`);
+      alert(`Done!\nWarned: ${d.warned}\nExpired: ${d.expired}\nNo email (admin action needed): ${d.noEmail}\n\nDetails:\n${JSON.stringify(d.details, null, 2)}`);
       loadExpiryData();
-    } catch(e) { alert('Check failed — cron secret may differ from admin password.'); }
+    } catch(e) { alert('Check failed: ' + e.message); }
   }
 
   loadExpiryData();
