@@ -849,6 +849,9 @@ function switchTab(tab){
   if(scr){
     const oldIdx=tabOrder.indexOf(currentTab);
     const newIdx=tabOrder.indexOf(tab);
+    scr.classList.remove("slide-left");
+    // Force reflow to restart animation
+    void scr.offsetWidth;
     scr.classList.add("active");
     if(newIdx < oldIdx) scr.classList.add("slide-left");
   }
@@ -1008,9 +1011,10 @@ function renderList(){
   if(ce){
     // Build cards then add stagger
     const cards = unique.map((m,i)=>{
+    const delay="animation-delay:"+(i*0.06)+"s";
     const ph=formatPhone(m.phone),p=m.phone||"";
     const callable=p&&!p.toLowerCase().includes("whatsapp")&&!p.trim().startsWith("+");
-    return`<div class="member-card"><div class="member-name">${esc(m.name)}</div>${callable?`<a class="member-phone" href="tel:${p.replace(/\D/g,"")}">${esc(ph)}</a>`:`<span class="member-phone" style="cursor:default">${esc(ph)}</span>`}${m.email?`<a class="member-email" href="mailto:${esc(m.email)}">${esc(m.email)}</a>`:""}<div class="member-badges">${m.sobriety_date?`<span class="badge badge-date">Sober ${fmtDate(m.sobriety_date)}</span>`:""} ${sponsorStr(m)!=="—"?`<span class="badge badge-sponsor">Sponsor: ${esc(sponsorStr(m))}</span>`:""}</div></div>`;
+    return`<div class="member-card" style="${delay}"><div class="member-name">${esc(m.name)}</div>${callable?`<a class="member-phone" href="tel:${p.replace(/\D/g,"")}">${esc(ph)}</a>`:`<span class="member-phone" style="cursor:default">${esc(ph)}</span>`}${m.email?`<a class="member-email" href="mailto:${esc(m.email)}">${esc(m.email)}</a>`:""}<div class="member-badges">${m.sobriety_date?`<span class="badge badge-date">Sober ${fmtDate(m.sobriety_date)}</span>`:""} ${sponsorStr(m)!=="—"?`<span class="badge badge-sponsor">Sponsor: ${esc(sponsorStr(m))}</span>`:""}</div></div>`;
   }).join("");
   if(be) be.innerHTML=unique.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td>${formatPhone(m.phone)}</td><td>${m.email?`<a href="mailto:${esc(m.email)}" style="color:var(--navy-lt)">${esc(m.email)}</a>`:"—"}</td><td>${fmtDate(m.sobriety_date)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
 }
@@ -1064,7 +1068,7 @@ function renderSponsorList(){
   if(ce) ce.innerHTML=cands.map(m=>{
     const ph=formatPhone(m.phone),p=m.phone||"";
     const callable=p&&!p.toLowerCase().includes("whatsapp")&&!p.trim().startsWith("+");
-    return`<div class="member-card"><div class="member-name">${esc(m.name)}</div>${callable?`<a class="member-phone" href="tel:${p.replace(/\D/g,"")}">${esc(ph)}</a>`:`<span class="member-phone" style="cursor:default">${esc(ph)}</span>`}<div class="member-badges"><span class="badge badge-sponsor">Sponsor: ${esc(sponsorStr(m))}</span></div></div>`;
+    return`<div class="member-card" style="${delay}"><div class="member-name">${esc(m.name)}</div>${callable?`<a class="member-phone" href="tel:${p.replace(/\D/g,"")}">${esc(ph)}</a>`:`<span class="member-phone" style="cursor:default">${esc(ph)}</span>`}<div class="member-badges"><span class="badge badge-sponsor">Sponsor: ${esc(sponsorStr(m))}</span></div></div>`;
   }).join("");
   if(be) be.innerHTML=cands.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td>${formatPhone(m.phone)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
 }
