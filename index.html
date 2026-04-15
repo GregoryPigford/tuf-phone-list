@@ -66,9 +66,9 @@
     /* ── SCREENS ── */
     .screen{display:none;min-height:calc(100vh - 0px);flex-direction:column}
     .screen.active{display:flex;animation:scrIn .25s cubic-bezier(.4,0,.2,1)}
-    @keyframes scrIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes scrIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
     .screen.active.slide-left{animation:scrInLeft .25s cubic-bezier(.4,0,.2,1)}
-    @keyframes scrInLeft{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes scrInLeft{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
 
     /* ── HEADER ── */
     .sh{background:linear-gradient(135deg,var(--navy),var(--navy2));padding:1rem 1.25rem;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.07);box-shadow:0 2px 14px rgba(0,0,0,.2)}
@@ -161,7 +161,7 @@
 
     .member-cards{display:flex;flex-direction:column;gap:10px}
     .member-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;transition:box-shadow .2s,transform .18s;box-shadow:0 1px 4px rgba(15,23,42,.05);opacity:0;transform:translateY(18px);animation:cardIn .4s ease forwards}
-    @keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+    @keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
     .member-card:hover{box-shadow:0 8px 24px rgba(15,23,42,.12);transform:translateY(-2px)}
     .member-name{font-family:"Fraunces",serif;font-size:1.05rem;font-weight:700;color:var(--navy);margin-bottom:4px}
     .member-phone{font-size:.92rem;font-weight:600;color:var(--navy-lt);display:flex;align-items:center;gap:6px;margin-bottom:3px;text-decoration:none}
