@@ -1456,8 +1456,8 @@ function calcSobriety(){
   const days = rem % 30;
   let main = '';
   if(years > 0) main += years + (years===1?' Year':' Years');
-  if(months > 0) main += (main?' ':') + months + (months===1?' Month':' Months');
-  if(days > 0 || totalDays < 30) main += (main?' ':') + days + (days===1?' Day':' Days');
+  if(months > 0) main += (main?' ':'') + months + (months===1?' Month':' Months');
+  if(days > 0 || totalDays < 30) main += (main?' ':'') + days + (days===1?' Day':' Days');
   document.getElementById('sobrietyMain').textContent = main || '0 Days';
   document.getElementById('sobrietySub').textContent = totalDays.toLocaleString() + ' total days sober · Since ' + start.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   document.getElementById('sobrietyResult').style.display='block';
@@ -1519,8 +1519,8 @@ function calcSobriety(){
   const days = rem % 30;
   let main = '';
   if(years > 0) main += years + (years===1?' Year':' Years');
-  if(months > 0) main += (main?' ':') + months + (months===1?' Month':' Months');
-  if(days > 0 || totalDays < 30) main += (main?' ':') + days + (days===1?' Day':' Days');
+  if(months > 0) main += (main?' ':'') + months + (months===1?' Month':' Months');
+  if(days > 0 || totalDays < 30) main += (main?' ':'') + days + (days===1?' Day':' Days');
   document.getElementById('sobrietyMain').textContent = main || '0 Days';
   document.getElementById('sobrietySub').textContent = totalDays.toLocaleString() + ' total days sober · Since ' + start.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   document.getElementById('sobrietyResult').style.display='block';
