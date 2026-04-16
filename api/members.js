@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
   let query = supabase
     .from('members')
-    .select('id, name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender, last_renewed, expiry_warned, active')
+    .select('id, name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender, last_renewed, expiry_warned, active, created_at')
     .order('name');
 
   if (!showAll) {
