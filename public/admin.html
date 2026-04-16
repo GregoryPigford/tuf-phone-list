@@ -580,6 +580,7 @@
   }
 
   function filteredMembers() {
+    // Will sort after filtering
     if (currentTab === 'all') return allMembers;
     return allMembers.filter(m => m.gender === currentTab);
   }
@@ -612,6 +613,11 @@
     document.getElementById('statSober').textContent = soberYearsDays(allMembers);
   }
 
+  function isNew(m) {
+    if (!m.created_at) return false;
+    return (Date.now() - new Date(m.created_at)) < 7 * 24 * 60 * 60 * 1000;
+  }
+
   function renderTable() {
     const tbody = document.getElementById('membersTbody');
     const members = filteredMembers();
@@ -620,9 +626,16 @@
       return;
     }
     const genderLabel = { male: "Men's", female: "Women's", nonbinary: 'Nonbinary' };
-    tbody.innerHTML = members.map(m => `
-      <tr>
-        <td class="name-cell">${esc(m.name)}</td>
+    // Sort: new members first
+    const sorted = [...members].sort((a,b) => {
+      const an = isNew(a), bn = isNew(b);
+      if (an && !bn) return -1;
+      if (!an && bn) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    tbody.innerHTML = sorted.map(m => `
+      <tr style="${isNew(m) ? 'background:#f0fdf4;border-left:3px solid #22c55e' : ''}">
+        <td class="name-cell">${esc(m.name)}${isNew(m) ? '<span style="background:#22c55e;color:white;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:6px;vertical-align:middle">NEW</span>' : ''}</td>
         <td>${esc(m.phone)}</td>
         <td>${m.email ? esc(m.email) : '—'}</td>
         <td>${m.sobriety_date ? formatDate(m.sobriety_date) : '—'}</td>
