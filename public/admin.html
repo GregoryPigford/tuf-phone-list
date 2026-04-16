@@ -383,6 +383,31 @@
     </div>
 
 
+
+    <!-- RESOURCES EDITOR -->
+    <div style="background:#fff9f2;border:1px solid #ddd0c4;border-radius:10px;padding:1.2rem 1.5rem;margin-bottom:1.25rem">
+      <div style="font-family:'Playfair Display',serif;font-size:1rem;color:#5c3d2e;font-weight:600;margin-bottom:.3rem">🔗 Resources</div>
+      <div style="font-size:.75rem;color:#9a8a7a;margin-bottom:1rem">Manage which resources appear on the site and in what order. Toggle visibility without deleting.</div>
+
+      <div id="adminResourcesList" style="margin-bottom:1rem"></div>
+
+      <div style="background:#f5f0ea;border-radius:8px;padding:1rem;margin-top:.5rem">
+        <div style="font-size:.75rem;font-weight:600;color:#5c3d2e;margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.06em">Add New Resource</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="resTitle" placeholder="Title" style="padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#faf7f2"/>
+          <input type="text" id="resDesc" placeholder="Description (optional)" style="padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#faf7f2"/>
+          <input type="text" id="resUrl" placeholder="URL (e.g. https://... or mailto:... or 'venmo')" style="padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#faf7f2"/>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="resIcon" placeholder="Icon emoji e.g. 🔗" style="width:80px;padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#faf7f2"/>
+            <input type="color" id="resColor" value="#1a4a7a" style="width:48px;height:34px;border:1px solid #ddd0c4;border-radius:6px;cursor:pointer;padding:2px"/>
+            <input type="number" id="resOrder" value="0" min="0" placeholder="Order" style="width:70px;padding:7px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.85rem;background:#faf7f2"/>
+            <button onclick="addResource()" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-family:inherit;font-size:.83rem;cursor:pointer">Add</button>
+          </div>
+        </div>
+        <div id="resMsg" style="font-size:.78rem;margin-top:.5rem;display:none"></div>
+      </div>
+    </div>
+
     <!-- FEATURE CARDS EDITOR -->
     <div style="background:#fff9f2;border:1px solid #ddd0c4;border-radius:10px;padding:1.2rem 1.5rem;margin-bottom:1.25rem">
       <div style="font-family:'Playfair Display',serif;font-size:1rem;color:#5c3d2e;font-weight:600;margin-bottom:.3rem">🖼️ Home Feature Cards</div>
@@ -967,6 +992,118 @@
 
   loadExpiryData();
 
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
+
   loadFeatureCardsAdmin();
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
   }
@@ -1087,6 +1224,118 @@
 
   loadExpiryData();
 
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
+
   loadFeatureCardsAdmin();
     } catch(e) { alert('Delete failed.'); }
   }
@@ -1173,6 +1422,118 @@
   }
 
   loadExpiryData();
+
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
 
   loadFeatureCardsAdmin();
 
@@ -1478,6 +1839,118 @@
 
   loadExpiryData();
 
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
+
   loadFeatureCardsAdmin();
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
   }
@@ -1598,6 +2071,118 @@
 
   loadExpiryData();
 
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
+
   loadFeatureCardsAdmin();
     } catch(e) { alert('Delete failed.'); }
   }
@@ -1684,6 +2269,118 @@
   }
 
   loadExpiryData();
+
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
 
   loadFeatureCardsAdmin();
 
@@ -1965,6 +2662,118 @@
 
   loadExpiryData();
 
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
+
   loadFeatureCardsAdmin();
     } catch(e) { msg.textContent=e.message||'Failed to add card.'; msg.style.color='#8b3a3a'; }
   }
@@ -2085,6 +2894,118 @@
 
   loadExpiryData();
 
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
+
   loadFeatureCardsAdmin();
     } catch(e) { alert('Delete failed.'); }
   }
@@ -2171,6 +3092,118 @@
   }
 
   loadExpiryData();
+
+
+  // ── RESOURCES ──
+  async function loadResourcesAdmin(){
+    try{
+      const res = await fetch('/api/resources', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      renderResourcesAdmin(data.resources || []);
+    }catch(e){}
+  }
+
+  function renderResourcesAdmin(resources){
+    const list = document.getElementById('adminResourcesList');
+    if(!list) return;
+    if(!resources.length){
+      list.innerHTML='<p style="font-size:.82rem;color:#9a8a7a;font-style:italic">No resources yet.</p>';
+      return;
+    }
+    list.innerHTML = resources.map(r => `
+      <div style="background:#faf7f2;border:1px solid #ddd0c4;border-radius:8px;padding:.7rem 1rem;margin-bottom:.5rem;display:flex;gap:.75rem;align-items:center">
+        <div style="font-size:1.3rem;flex-shrink:0">${r.icon||'🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:600;color:#2d1f17">${esc(r.title)}</div>
+          ${r.description?`<div style="font-size:.74rem;color:#7a5c50;margin-top:1px">${esc(r.description.slice(0,60))}${r.description.length>60?'...':''}</div>`:''}
+          <div style="font-size:.68rem;color:#9a8a7a;margin-top:2px">Order: ${r.sort_order}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+          <button onclick="toggleResource('${r.id}',${!r.active})" style="background:none;border:1px solid ${r.active?'#86efac':'#ddd0c4'};border-radius:5px;padding:3px 9px;font-size:.74rem;color:${r.active?'#14532d':'#9a8a7a'};cursor:pointer">${r.active?'✅ On':'⭕ Off'}</button>
+          <button onclick="editResource('${r.id}')" style="background:none;border:1px solid #b8a898;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#5c3d2e;cursor:pointer">Edit</button>
+          <button onclick="deleteResource('${r.id}')" style="background:none;border:1px solid #dba8a8;border-radius:5px;padding:3px 9px;font-size:.74rem;color:#8b3a3a;cursor:pointer">✕</button>
+        </div>
+      </div>
+      <div id="res-edit-${r.id}" style="display:none;background:#f0ebe3;border:1px solid #ddd0c4;border-radius:8px;padding:.8rem 1rem;margin-bottom:.5rem">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input type="text" id="res-t-${r.id}" value="${esc(r.title)}" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-d-${r.id}" value="${esc(r.description||'')}" placeholder="Description" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <input type="text" id="res-u-${r.id}" value="${esc(r.url||'')}" placeholder="URL" style="padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="res-i-${r.id}" value="${r.icon||''}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <input type="number" id="res-o-${r.id}" value="${r.sort_order}" style="width:70px;padding:6px 10px;border:1px solid #ddd0c4;border-radius:6px;font-family:inherit;font-size:.83rem;background:#fff"/>
+            <button onclick="saveResource('${r.id}')" style="background:#5c3d2e;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-family:inherit;font-size:.82rem;cursor:pointer">Save</button>
+            <button onclick="document.getElementById('res-edit-${r.id}').style.display='none'" style="background:none;border:1px solid #ddd0c4;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:.82rem;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function editResource(id){
+    document.getElementById('res-edit-'+id).style.display='block';
+  }
+
+  async function toggleResource(id, active){
+    try{
+      await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({active})
+      });
+      loadResourcesAdmin();
+    }catch(e){ alert('Failed to toggle.'); }
+  }
+
+  async function saveResource(id){
+    const title = document.getElementById('res-t-'+id).value.trim();
+    const description = document.getElementById('res-d-'+id).value.trim();
+    const url = document.getElementById('res-u-'+id).value.trim();
+    const icon = document.getElementById('res-i-'+id).value.trim();
+    const sort_order = parseInt(document.getElementById('res-o-'+id).value)||0;
+    try{
+      const res = await fetch('/api/resources?id='+id, {
+        method:'PUT', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      document.getElementById('res-edit-'+id).style.display='none';
+      loadResourcesAdmin();
+    }catch(e){ alert('Save failed.'); }
+  }
+
+  async function deleteResource(id){
+    if(!confirm('Delete this resource?')) return;
+    try{
+      await fetch('/api/resources?id='+id, {method:'DELETE',headers:{'Authorization':`Bearer ${token}`}});
+      loadResourcesAdmin();
+    }catch(e){ alert('Delete failed.'); }
+  }
+
+  async function addResource(){
+    const title = document.getElementById('resTitle').value.trim();
+    const description = document.getElementById('resDesc').value.trim();
+    const url = document.getElementById('resUrl').value.trim();
+    const icon = document.getElementById('resIcon').value.trim();
+    const color = document.getElementById('resColor').value;
+    const sort_order = parseInt(document.getElementById('resOrder').value)||0;
+    const msg = document.getElementById('resMsg');
+    if(!title){msg.textContent='Title required';msg.style.color='#8b3a3a';msg.style.display='block';return;}
+    try{
+      const res = await fetch('/api/resources', {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({title,description:description||null,url:url||null,icon:icon||'🔗',color,sort_order})
+      });
+      if(!res.ok) throw new Error('Failed');
+      ['resTitle','resDesc','resUrl','resIcon'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('resOrder').value='0';
+      msg.textContent='Added!';msg.style.color='#14532d';msg.style.display='block';
+      setTimeout(()=>msg.style.display='none',2000);
+      loadResourcesAdmin();
+    }catch(e){msg.textContent='Failed';msg.style.color='#8b3a3a';msg.style.display='block';}
+  }
+
+  loadResourcesAdmin();
 
   loadFeatureCardsAdmin();
 
