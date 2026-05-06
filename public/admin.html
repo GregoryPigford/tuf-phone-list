@@ -311,9 +311,10 @@
 
     /* ── PRINT VIEW ── */
     @media print {
-      .topbar, .stats-bar, .table-header, .action-btns, #loginScreen { display: none !important; }
-      body { background: white; }
-      .main { padding: 0; max-width: 100%; }
+      /* Hide everything except the print list */
+      body * { visibility: hidden; }
+      #printArea, #printArea * { visibility: visible; }
+      #printArea { position: absolute; top: 0; left: 0; width: 100%; }
       .print-section { display: block !important; }
       table { font-size: 9pt; }
       .table-wrap { border: none; border-radius: 0; }
@@ -873,7 +874,52 @@
     } catch(e) { alert('Reset failed.'); }
   }
 
-  function printList() { window.print(); }
+  function printList() {
+    const members = filteredMembers().sort((a,b) => a.name.localeCompare(b.name));
+    const title = currentTab === 'all' ? 'All Members' : currentTab === 'male' ? "Men's List" : currentTab === 'female' ? "Women's List" : 'Nonbinary List';
+    const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    // Build print area
+    let existing = document.getElementById('printArea');
+    if (existing) existing.remove();
+
+    const div = document.createElement('div');
+    div.id = 'printArea';
+    div.style.cssText = 'font-family:Georgia,serif;padding:1in;display:none';
+    div.innerHTML = `
+      <div style="text-align:center;margin-bottom:24px;border-bottom:2px solid #1a2d4a;padding-bottom:16px">
+        <div style="font-size:18pt;font-weight:700;color:#1a2d4a">The Unshakable Foundation</div>
+        <div style="font-size:11pt;color:#666;margin-top:4px">${title} · ${date}</div>
+        <div style="font-size:10pt;color:#666">${members.length} member${members.length===1?'':'s'}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:10pt">
+        <thead>
+          <tr style="border-bottom:1px solid #1a2d4a">
+            <th style="text-align:left;padding:4px 8px;color:#1a2d4a;font-size:8pt;text-transform:uppercase;letter-spacing:.08em">Name</th>
+            <th style="text-align:left;padding:4px 8px;color:#1a2d4a;font-size:8pt;text-transform:uppercase;letter-spacing:.08em">Phone</th>
+            <th style="text-align:left;padding:4px 8px;color:#1a2d4a;font-size:8pt;text-transform:uppercase;letter-spacing:.08em">Sober Since</th>
+            <th style="text-align:left;padding:4px 8px;color:#1a2d4a;font-size:8pt;text-transform:uppercase;letter-spacing:.08em">Sponsor?</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${members.map((m,i) => `
+            <tr style="border-bottom:1px solid #eee;background:${i%2===0?'white':'#f9f7f4'}">
+              <td style="padding:5px 8px;font-weight:600">${esc(m.name)}</td>
+              <td style="padding:5px 8px;font-family:'Courier New',monospace">${fmtPhone(m.phone)}</td>
+              <td style="padding:5px 8px">${m.sobriety_date ? formatDate(m.sobriety_date) : '—'}</td>
+              <td style="padding:5px 8px">${esc(sponsorDisplay(m))}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:20px;text-align:center;font-size:8pt;color:#999;border-top:1px solid #eee;padding-top:8px">
+        Printed from tufmeeting.org · Confidential — for members only
+      </div>
+    `;
+    document.body.appendChild(div);
+    div.style.display = 'block';
+    window.print();
+    setTimeout(() => div.remove(), 1000);
+  }
 
   function toggleAddMember() {
     const form = document.getElementById('addMemberForm');
