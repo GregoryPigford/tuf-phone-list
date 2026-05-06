@@ -14,11 +14,16 @@ export default async function handler(req, res) {
 
   const auth = req.headers.authorization || '';
   const isAdmin = auth === `Bearer ${process.env.ADMIN_PASSWORD}`;
+
+  // Admin login verification — reject if ?admin=1 but wrong password
+  if (req.query.admin === '1' && !isAdmin) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
   const showAll = req.query.all === 'true' && isAdmin;
 
   let query = supabase
     .from('members')
-    .select('id, name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender, last_renewed, expiry_warned, active, created_at')
+    .select('id, name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other, gender, last_renewed, expiry_warned, active, created_at, pin_hash')
     .order('name');
 
   if (!showAll) {
@@ -27,5 +32,13 @@ export default async function handler(req, res) {
 
   const { data, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json(data || []);
+  // Strip pin_hash from public responses
+  const result = (data || []).map(m => {
+    if (!isAdmin) {
+      const { pin_hash, ...rest } = m;
+      return rest;
+    }
+    return m;
+  });
+  return res.status(200).json(result);
 }
