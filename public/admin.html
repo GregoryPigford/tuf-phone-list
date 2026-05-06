@@ -716,6 +716,7 @@
           <div class="action-btns">
             <button class="edit-btn" onclick="openEdit('${m.id}')">Edit</button>
             <button class="del-btn" onclick="deleteMember('${m.id}', '${esc(m.name)}')">Remove</button>
+            <button onclick="resetPin('${m.id}','${esc(m.name)}')" style="background:none;border:1px solid #c8b8d8;border-radius:5px;padding:4px 10px;font-size:.78rem;color:#4a2d5a;cursor:pointer;font-family:inherit">Reset PIN</button>
           </div>
         </td>
       </tr>
