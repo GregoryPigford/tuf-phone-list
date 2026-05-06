@@ -10,9 +10,17 @@ export default async function handler(req, res) {
   const auth = req.headers.authorization;
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
 
+  // Read expiry setting
+  let expiryDays = 180;
+  try {
+    const { data: settings } = await supabase.from('settings').select('value').eq('key','expiry_days').single();
+    if (settings?.value) expiryDays = parseInt(settings.value) || 180;
+  } catch(e) {}
+  const warnDays = expiryDays - 30;
+
   const now = new Date();
-  const day150 = new Date(now - 150 * 24 * 60 * 60 * 1000);
-  const day180 = new Date(now - 180 * 24 * 60 * 60 * 1000);
+  const dayWarn = new Date(now - warnDays * 24 * 60 * 60 * 1000);
+  const dayExpiry = new Date(now - expiryDays * 24 * 60 * 60 * 1000);
 
   const { data: members, error } = await supabase.from('members')
     .select('id, name, email, last_renewed, expiry_warned').eq('active', true);
@@ -25,7 +33,7 @@ export default async function handler(req, res) {
     const token = Buffer.from(`${m.id}:${process.env.CRON_SECRET}`).toString('base64url');
     const renewUrl = `${BASE_URL}/api/renew?token=${token}`;
 
-    if (renewed < day180) {
+    if (renewed < dayExpiry) {
       await supabase.from('members').update({ active: false }).eq('id', m.id);
       expired.push(m.name);
       if (m.email) {
@@ -46,7 +54,7 @@ export default async function handler(req, res) {
       continue;
     }
 
-    if (renewed < day150 && !m.expiry_warned) {
+    if (renewed < dayWarn && !m.expiry_warned) {
       if (m.email) {
         try {
           await resend.emails.send({

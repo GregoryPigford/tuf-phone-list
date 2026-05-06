@@ -88,6 +88,12 @@ export default async function handler(req, res) {
       if (last_renewed !== undefined) updates.last_renewed = last_renewed;
       if (expiry_warned !== undefined) updates.expiry_warned = expiry_warned;
       if (active !== undefined) updates.active = active;
+      if (body._resetPin) {
+        // Clear PIN — puts member back into grandfather flow
+        const { error } = await supabase.from('members').update({ pin_hash: null }).eq('id', id);
+        if (error) return res.status(500).json({ error: error.message });
+        return res.status(200).json({ success: true });
+      }
       if (newPin && /^\d{4}$/.test(newPin)) {
         updates.pin_hash = hashPin(newPin);
         const { data: member } = await supabase.from('members').select('name, email').eq('id', id).single();
