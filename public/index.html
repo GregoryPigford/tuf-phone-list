@@ -428,7 +428,7 @@
           </div>
         </div>
         <div class="member-cards" id="memberCards"></div>
-        <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Sobriety Date</th><th>Sponsor?</th></tr></thead><tbody id="listBody"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Name</th><th style="white-space:nowrap">Phone</th><th>Email</th><th style="white-space:nowrap">Sobriety Date</th><th>Sponsor?</th></tr></thead><tbody id="listBody"></tbody></table></div>
       </div>
     </div>
   </div>
@@ -631,6 +631,11 @@
           </div>
         </div>
         <div class="info-box">✏️ To change which list you appear on, contact the meeting admin.</div>
+        <div class="field">
+          <label for="editNewPin">Change PIN (optional)</label>
+          <input type="password" id="editNewPin" placeholder="Enter new 4-digit PIN to change it" maxlength="4" inputmode="numeric"/>
+          <p class="hint">Leave blank to keep your current PIN.</p>
+        </div>
         <div class="btn-row">
           <button class="submit-btn" id="saveBtn" onclick="saveUpdate()">Save Changes</button>
           <button class="cancel-btn" onclick="cancelEdit()">Cancel</button>
@@ -930,7 +935,7 @@ function renderList(){
   }
   if(ce) ce.innerHTML=unique.map((m,i)=>{const delay="animation-delay:"+(i*0.07)+"s";const dir=i%2===0?"card-from-left":"card-from-right";const ph=formatPhone(m.phone),p=m.phone||"";const callable=p&&!p.toLowerCase().includes("whatsapp")&&!p.trim().startsWith("+");return`<div class="member-card ${dir}" style="${delay}"><div class="member-name">${esc(m.name)}</div>${callable?`<a class="member-phone" href="tel:${p.replace(/\D/g,"")}">${esc(ph)}</a>`:`<span class="member-phone" style="cursor:default">${esc(ph)}</span>`}${m.email?`<a class="member-email" href="mailto:${esc(m.email)}">${esc(m.email)}</a>`:""}<div class="member-badges">${m.sobriety_date?`<span class="badge badge-date">Sober ${fmtDate(m.sobriety_date)}</span>`:""} ${sponsorStr(m)!=="—"?`<span class="badge badge-sponsor">Sponsor: ${esc(sponsorStr(m))}</span>`:""}</div></div>`;
   }).join("");
-  if(be) be.innerHTML=unique.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td>${formatPhone(m.phone)}</td><td>${m.email?`<a href="mailto:${esc(m.email)}" style="color:var(--navy-lt)">${esc(m.email)}</a>`:"—"}</td><td>${fmtDate(m.sobriety_date)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
+  if(be) be.innerHTML=unique.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td style="white-space:nowrap">${formatPhone(m.phone)}</td><td>${m.email?`<a href="mailto:${esc(m.email)}" style="color:var(--navy-lt)">${esc(m.email)}</a>`:"—"}</td><td>${fmtDate(m.sobriety_date)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
 }
 
 // ── SPONSORS ──
@@ -1386,12 +1391,18 @@ function cancelEdit(){
 async function saveUpdate(){
   const btn=document.getElementById("saveBtn"),id=document.getElementById("editId").value;
   const pin=document.getElementById("pinCard").dataset.pin||"";
+  const newPin=document.getElementById("editNewPin").value.trim();
   const body={name:document.getElementById("editName").value.trim(),phone:document.getElementById("editPhone").value.trim(),email:document.getElementById("editEmail").value.trim()||null,sobriety_date:document.getElementById("editSobriety").value||null,sponsor_dropdown:document.getElementById("editSponsorDrop").value||null,sponsor_other:document.getElementById("editSponsorOther").value.trim()||null,pin};
+  if(newPin){
+    if(!/^\d{4}$/.test(newPin)){showMsg("emsg","New PIN must be exactly 4 digits.","error");return;}
+    body.newPin=newPin;
+  }
   btn.disabled=true;btn.textContent="Saving...";
   try{
     const res=await fetch(`/api/member?id=${id}`,{method:"PUT",headers:{"Content-Type":"application/json","Authorization":"Bearer PUBLIC_UPDATE"},body:JSON.stringify(body)});
     if(res.status===401){showMsg("emsg","Incorrect PIN. Please go back and try again.","error");return;}
     if(!res.ok) throw new Error("Save failed.");
+    document.getElementById("editNewPin").value="";
     showMsg("emsg","Your info has been updated!","success");
     allMembers=[];
     setTimeout(()=>{ hideSubpage(); }, 1500);
