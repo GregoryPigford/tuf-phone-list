@@ -181,7 +181,7 @@
     .table-wrap{display:none}
     @media(min-width:600px){
       .member-cards{display:none}
-      .table-wrap{display:block;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 12px rgba(15,23,42,.06)}
+      .table-wrap{display:block;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;box-shadow:0 2px 12px rgba(15,23,42,.06)}
       table{width:100%;border-collapse:collapse}
       thead{background:linear-gradient(135deg,var(--navy),var(--navy2))}
       th{padding:10px 14px;font-size:.64rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.75);text-align:left}
@@ -935,7 +935,7 @@ function renderList(){
   }
   if(ce) ce.innerHTML=unique.map((m,i)=>{const delay="animation-delay:"+(i*0.07)+"s";const dir=i%2===0?"card-from-left":"card-from-right";const ph=formatPhone(m.phone),p=m.phone||"";const callable=p&&!p.toLowerCase().includes("whatsapp")&&!p.trim().startsWith("+");return`<div class="member-card ${dir}" style="${delay}"><div class="member-name">${esc(m.name)}</div>${callable?`<a class="member-phone" href="tel:${p.replace(/\D/g,"")}">${esc(ph)}</a>`:`<span class="member-phone" style="cursor:default">${esc(ph)}</span>`}${m.email?`<a class="member-email" href="mailto:${esc(m.email)}">${esc(m.email)}</a>`:""}<div class="member-badges">${m.sobriety_date?`<span class="badge badge-date">Sober ${fmtDate(m.sobriety_date)}</span>`:""} ${sponsorStr(m)!=="—"?`<span class="badge badge-sponsor">Sponsor: ${esc(sponsorStr(m))}</span>`:""}</div></div>`;
   }).join("");
-  if(be) be.innerHTML=unique.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td>${formatPhone(m.phone)}</td><td>${m.email?`<a href="mailto:${esc(m.email)}" style="color:var(--navy-lt)">${esc(m.email)}</a>`:"—"}</td><td>${fmtDate(m.sobriety_date)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
+  if(be) be.innerHTML=unique.map(m=>`<tr><td class="name-cell">${esc(m.name)}</td><td style="white-space:nowrap">${formatPhone(m.phone)}</td><td>${m.email?`<a href="mailto:${esc(m.email)}" style="color:var(--navy-lt)">${esc(m.email)}</a>`:"—"}</td><td>${fmtDate(m.sobriety_date)}</td><td>${esc(sponsorStr(m))}</td></tr>`).join("");
 }
 
 // ── SPONSORS ──
