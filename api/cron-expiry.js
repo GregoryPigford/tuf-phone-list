@@ -8,7 +8,9 @@ const BASE_URL = 'https://tufmeeting.org';
 
 export default async function handler(req, res) {
   const auth = req.headers.authorization;
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: 'Unauthorized' });
+  const validCron = auth === `Bearer ${process.env.CRON_SECRET}`;
+  const validAdmin = auth === `Bearer ${process.env.ADMIN_PASSWORD}`;
+  if (!validCron && !validAdmin) return res.status(401).json({ error: 'Unauthorized' });
 
   // Read expiry setting
   let expiryDays = 180;
