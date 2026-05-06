@@ -359,7 +359,7 @@
 <div id="wipe"></div>
 
 <!-- BOTTOM NAV (mobile) -->
-<div id="bottomNav">
+<div id="bottomNav" style="position:relative"><button class="dark-toggle" onclick="toggleDark()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.9rem;z-index:1">🌙</button>
   <div class="bnav-inner">
     <button class="bnav-item active" id="bnav-home" onclick="switchTab('home')"><span class="bi">🏠</span>Home</button>
     <button class="bnav-item" id="bnav-list" onclick="switchTab('list')"><span class="bi">📋</span>List</button>
@@ -384,7 +384,7 @@
     <div class="nav-divider"></div>
     <button class="nav-item" id="tab-me" onclick="switchTab('me')"><span class="ni">⚙️</span>Me</button>
   </nav>
-  <div class="sidebar-footer">The Unshakable Foundation<br>Portland, OR · Est. 2021</div>
+  <div class="sidebar-footer"><button class="dark-toggle" onclick="toggleDark()" id="darkToggleSidebar" title="Toggle dark mode" style="margin-bottom:.5rem;display:block">🌙</button>The Unshakable Foundation<br>Portland, OR · Est. 2021</div>
 </div>
 
 <div id="screens">
