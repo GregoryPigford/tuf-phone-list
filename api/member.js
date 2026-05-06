@@ -8,6 +8,42 @@ const FROM = process.env.FROM_EMAIL || 'noreply@tufmeeting.org';
 const SITE = 'https://tufmeeting.org';
 const ADMIN_EMAIL = 'theunshakablefoundation@gmail.com';
 
+
+// Simple in-memory brute force protection
+// Resets on server restart (fine for serverless - each function instance tracks separately)
+const pinAttempts = new Map();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(id) {
+  const now = Date.now();
+  const record = pinAttempts.get(id) || { count: 0, firstAttempt: now, locked: false, lockUntil: 0 };
+  if (record.locked && now < record.lockUntil) {
+    const minsLeft = Math.ceil((record.lockUntil - now) / 60000);
+    return { blocked: true, minsLeft };
+  }
+  if (record.locked && now >= record.lockUntil) {
+    pinAttempts.delete(id);
+    return { blocked: false };
+  }
+  return { blocked: false };
+}
+
+function recordFailedAttempt(id) {
+  const now = Date.now();
+  const record = pinAttempts.get(id) || { count: 0, firstAttempt: now };
+  record.count += 1;
+  if (record.count >= MAX_ATTEMPTS) {
+    record.locked = true;
+    record.lockUntil = now + LOCKOUT_MS;
+  }
+  pinAttempts.set(id, record);
+}
+
+function clearAttempts(id) {
+  pinAttempts.delete(id);
+}
+
 function hashPin(pin) { return crypto.createHash('sha256').update(pin + 'tuf2021salt').digest('hex'); }
 function normalizePhone(p) { return (p || '').replace(/\D/g, '').slice(-10); }
 
@@ -110,7 +146,13 @@ export default async function handler(req, res) {
 
     if (body._pinCheck) {
       if (!member.pin_hash) return res.status(428).json({ error: 'no_pin' });
-      if (member.pin_hash !== hashPin(body.pin || '')) return res.status(401).json({ error: 'Incorrect PIN' });
+      const limit = checkRateLimit(id);
+      if (limit.blocked) return res.status(429).json({ error: `Too many attempts. Try again in ${limit.minsLeft} minutes.` });
+      if (member.pin_hash !== hashPin(body.pin || '')) {
+        recordFailedAttempt(id);
+        return res.status(401).json({ error: 'Incorrect PIN' });
+      }
+      clearAttempts(id);
       return res.status(200).json({ success: true, verified: true });
     }
 
@@ -126,7 +168,13 @@ export default async function handler(req, res) {
 
     const pin = body.pin || '';
     if (!member.pin_hash) return res.status(428).json({ error: 'no_pin' });
-    if (member.pin_hash !== hashPin(pin)) return res.status(401).json({ error: 'Incorrect PIN. Please try again.' });
+    const putLimit = checkRateLimit(id);
+    if (putLimit.blocked) return res.status(429).json({ error: `Too many attempts. Try again in ${putLimit.minsLeft} minutes.` });
+    if (member.pin_hash !== hashPin(pin)) {
+      recordFailedAttempt(id);
+      return res.status(401).json({ error: 'Incorrect PIN. Please try again.' });
+    }
+    clearAttempts(id);
 
     const { name, phone, email, sobriety_date, sponsor_dropdown, sponsor_other,
             newPin, last_renewed, expiry_warned, active } = body;
@@ -161,7 +209,13 @@ export default async function handler(req, res) {
       .select('pin_hash, name, email').eq('id', id).single();
     if (fetchErr || !member) return res.status(404).json({ error: 'Member not found' });
     if (!member.pin_hash) return res.status(428).json({ error: 'no_pin' });
-    if (member.pin_hash !== hashPin(pin)) return res.status(401).json({ error: 'Incorrect PIN. Please try again.' });
+    const delLimit = checkRateLimit(id);
+    if (delLimit.blocked) return res.status(429).json({ error: `Too many attempts. Try again in ${delLimit.minsLeft} minutes.` });
+    if (member.pin_hash !== hashPin(pin)) {
+      recordFailedAttempt(id);
+      return res.status(401).json({ error: 'Incorrect PIN. Please try again.' });
+    }
+    clearAttempts(id);
 
     const { error } = await supabase.from('members').delete().eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
