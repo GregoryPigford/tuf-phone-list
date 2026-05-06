@@ -712,6 +712,7 @@
         <td>${m.sobriety_date ? formatDate(m.sobriety_date) : '—'}</td>
         <td>${esc(sponsorDisplay(m))}</td>
         <td>${genderLabel[m.gender]}</td>
+        <td style="text-align:center">${m.pin_hash ? '<span style="color:#14532d;font-weight:600">✅</span>' : '<span style="color:#92400e;font-weight:600">⚠️</span>'}</td>
         <td>
           <div class="action-btns">
             <button class="edit-btn" onclick="openEdit('${m.id}')">Edit</button>
