@@ -333,6 +333,26 @@
     #home-screen{position:relative;z-index:1}
     .screen:not(#home-screen){position:relative;z-index:1}
     .subpage{position:relative;z-index:1}
+
+    /* ── DARK MODE ── */
+    body.dark{
+      --navy:#0a1628;
+      --navy2:#060f1c;
+      --slate:#1a2030;
+      --white:#242938;
+      --text:#e8e0d5;
+      --text-m:#8892a4;
+      --border:#2a3448;
+      background:var(--slate);
+    }
+    body.dark .member-card{background:var(--white);border-color:var(--border)}
+    body.dark .card{background:var(--white);border-color:var(--border)}
+    body.dark .sidebar{background:var(--navy)}
+    body.dark .bottom-tabs{background:var(--navy);border-color:var(--border)}
+    body.dark input,body.dark select,body.dark textarea{background:#1e2535;border-color:var(--border);color:var(--text)}
+    body.dark .sh{background:linear-gradient(135deg,var(--navy),var(--navy2))}
+    .dark-toggle{background:none;border:none;cursor:pointer;font-size:1.1rem;padding:4px 8px;border-radius:6px;transition:background .2s}
+    .dark-toggle:hover{background:rgba(255,255,255,.1)}
   </style>
 </head>
 <body>
@@ -428,7 +448,10 @@
             <button class="print-btn" onclick="window.print()">⎙ Print</button>
           </div>
         </div>
-        <div class="member-cards" id="memberCards"></div>
+        <div style="margin-bottom:.75rem;position:relative">
+        <input type="text" id="listSearch" placeholder="🔍 Search members..." oninput="filterList(this.value)" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--white);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none"/>
+      </div>
+      <div class="member-cards" id="memberCards"></div>
         <div class="table-wrap"><table><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Sobriety Date</th><th>Sponsor?</th></tr></thead><tbody id="listBody"></tbody></table></div>
       </div>
     </div>
@@ -1327,6 +1350,17 @@ async function confirmRenew(){
   finally{btn.disabled=false;btn.textContent="Renew My Listing";}
 }
 
+// ── LIST SEARCH ──
+function filterList(q){
+  q = q.toLowerCase().trim();
+  const cards = document.querySelectorAll('#memberCards .member-card');
+  cards.forEach(card => {
+    const name = card.querySelector('.member-name');
+    const show = !q || (name && name.textContent.toLowerCase().includes(q));
+    card.style.display = show ? '' : 'none';
+  });
+}
+
 // ── SEARCH ──
 function clearSearch(mode){
   const s=document.getElementById(mode+"Search");if(s)s.value="";
@@ -1473,6 +1507,20 @@ function calcSobriety(){
   document.getElementById('sobrietyResult').style.display='block';
 }
 
+function toggleDark(){
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('tuf_dark', isDark ? '1' : '0');
+  const emoji = isDark ? '☀️' : '🌙';
+  document.querySelectorAll('.dark-toggle').forEach(b => b.textContent = emoji);
+}
+
+function initDarkMode(){
+  if(localStorage.getItem('tuf_dark') === '1'){
+    document.body.classList.add('dark');
+    document.querySelectorAll('.dark-toggle').forEach(b => b.textContent = '☀️');
+  }
+}
+
 function getMeetingLocalTime(){
   // TUF meets at 10pm Pacific Time daily
   const now = new Date();
@@ -1536,6 +1584,20 @@ function calcSobriety(){
   document.getElementById('sobrietyResult').style.display='block';
 }
 
+function toggleDark(){
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('tuf_dark', isDark ? '1' : '0');
+  const emoji = isDark ? '☀️' : '🌙';
+  document.querySelectorAll('.dark-toggle').forEach(b => b.textContent = emoji);
+}
+
+function initDarkMode(){
+  if(localStorage.getItem('tuf_dark') === '1'){
+    document.body.classList.add('dark');
+    document.querySelectorAll('.dark-toggle').forEach(b => b.textContent = '☀️');
+  }
+}
+
 function getMeetingLocalTime(){
   try{
     // TUF meets at 10pm Pacific every night
@@ -1560,6 +1622,7 @@ function getMeetingLocalTime(){
 
 // ── INIT ──
 window.addEventListener("resize",()=>moveIndicator(currentTab));
+initDarkMode();
 loadAnnouncement();
 loadFeatureCards();
 getMeetingLocalTime();
