@@ -311,14 +311,20 @@
 
     /* ── PRINT VIEW ── */
     @media print {
-      /* Hide everything except the print list */
-      body * { visibility: hidden; }
-      #printArea, #printArea * { visibility: visible; }
-      #printArea { position: absolute; top: 0; left: 0; width: 100%; }
-      .print-section { display: block !important; }
-      table { font-size: 9pt; }
-      .table-wrap { border: none; border-radius: 0; }
-      .print-header { display: block !important; margin-bottom: 12pt; }
+      * { visibility: hidden !important; margin: 0 !important; padding: 0 !important; }
+      #printArea, #printArea * { visibility: visible !important; }
+      #printArea {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+      }
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
+        background: white !important;
+      }
     }
 
     .print-header { display: none; }
@@ -609,6 +615,7 @@
             <th>Sobriety Date</th>
             <th>Willing to Sponsor</th>
             <th>List</th>
+            <th>Expires</th>
             <th>PIN</th>
             <th></th>
           </tr>
@@ -716,6 +723,19 @@
     return (Date.now() - new Date(m.created_at)) < 7 * 24 * 60 * 60 * 1000;
   }
 
+  function fmtExpiry(last_renewed) {
+    if (!last_renewed) return '<span style="color:#92400e">Unknown</span>';
+    const renewed = new Date(last_renewed);
+    const expiry = new Date(renewed.getTime() + 180 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const daysLeft = Math.floor((expiry - now) / (1000 * 60 * 60 * 24));
+    const dateStr = expiry.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+    if (daysLeft < 0) return `<span style="color:#8b3a3a;font-weight:600">Expired</span>`;
+    if (daysLeft <= 30) return `<span style="color:#92400e;font-weight:600">${dateStr}</span>`;
+    if (daysLeft <= 60) return `<span style="color:#c96a20">${dateStr}</span>`;
+    return `<span style="color:#475569">${dateStr}</span>`;
+  }
+
   function fmtPhone(raw) {
     if (!raw) return '—';
     const t = raw.trim();
@@ -790,6 +810,7 @@
         <td>${m.sobriety_date ? formatDate(m.sobriety_date) : '—'}</td>
         <td>${esc(sponsorDisplay(m))}</td>
         <td>${genderLabel[m.gender] || m.gender}</td>
+        <td style="white-space:nowrap;font-size:.8rem">${fmtExpiry(m.last_renewed)}</td>
         <td style="text-align:center">${m.pin_hash ? '<span style="color:#14532d;font-weight:600">✅</span>' : '<span style="color:#92400e;font-weight:600">⚠️</span>'}</td>
         <td>
           <div class="action-btns">
