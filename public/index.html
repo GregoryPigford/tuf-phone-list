@@ -1101,7 +1101,7 @@ function preCheckGender(){
 // ── UTILITIES ──
 function sponsorStr(m){const d=m.sponsor_dropdown||"";if(d==="Other"||d==="other")return m.sponsor_other||"—";return[d,m.sponsor_other].filter(v=>v&&v.trim()).join(", ")||"—";}
 function fmtDate(d){if(!d)return"—";const[y,mo,day]=d.split("-");return`${parseInt(mo)}/${parseInt(day)}/${y.slice(2)}`;}
-function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 
 // ── ADD FORM ──
 document.querySelectorAll("input[name='gender']").forEach(r=>{
@@ -1279,9 +1279,7 @@ async function verifyAndRemove(){
   const btn=document.getElementById("confirmRemoveBtn");
   btn.disabled=true;btn.textContent="Verifying...";
   try{
-    const res=await fetch(`/api/member?id=${id}`,{method:"DELETE",headers:{"Authorization":"Bearer PUBLIC_REMOVE"},body:JSON.stringify({pin}),});
-    // Oops - DELETE with body is tricky, use query param
-    const res2=await fetch(`/api/member?id=${id}&pin=${pin}`,{method:"DELETE",headers:{"Authorization":"Bearer PUBLIC_REMOVE"}});
+    const res2=await fetch(`/api/member?id=${id}`,{method:"DELETE",headers:{"Content-Type":"application/json","Authorization":"Bearer PUBLIC_REMOVE"},body:JSON.stringify({pin})});
     if(res2.status===401){showMsg("removePinMsg","Incorrect PIN. Please try again.","error");return;}
     if(!res2.ok)throw new Error("Removal failed.");
     // Show confirm card as success
