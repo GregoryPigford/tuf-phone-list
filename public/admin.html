@@ -718,7 +718,7 @@
     tbody.innerHTML = sorted.map(m => `
       <tr style="${isNew(m) ? 'background:#f0fdf4;border-left:3px solid #22c55e' : ''}">
         <td class="name-cell">${esc(m.name)}${isNew(m) ? '<span style="background:#22c55e;color:white;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:6px;vertical-align:middle">NEW</span>' : ''}</td>
-        <td style="white-space:nowrap">${fmtPhone(m.phone)}</td>
+        <td style="${m.phone && m.phone.replace(/\D/g,'').length <= 11 ? 'white-space:nowrap' : ''}">${fmtPhone(m.phone)}</td>
         <td>${m.email ? esc(m.email) : '—'}</td>
         <td>${m.sobriety_date ? formatDate(m.sobriety_date) : '—'}</td>
         <td>${esc(sponsorDisplay(m))}</td>
